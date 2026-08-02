@@ -1,153 +1,170 @@
-# CleverReach für Craft CMS
+# CleverReach
 
-DSGVO-konforme CleverReach-Newsletter-Integration für Craft CMS: Double-Opt-in-Anmeldung, Attribut-Sync und optionaler Craft-Commerce-Order-Push für CleverReach-Automation-Flows.
+GDPR-compliant CleverReach newsletter integration for Craft CMS: double opt-in signup, attribute sync, and an optional Craft Commerce order push.
 
-Umgesetzt gemäß [Feinkonzept](../docs/cleverreach/feinkonzept.md) — aktuell **Phase 1 + 2 + 3** (Grundgerüst; siehe "Status" unten).
+## Requirements
 
-## Voraussetzungen
-
-- Craft CMS ^5.0.0
-- Ein CleverReach-Account mit OAuth-App (Account → Extras → REST API), Grant-Typ **Client Credentials**
-- Optional: Craft Commerce ^5.0.0 für den Order-Push (Baustein C) und den Kunden-Import
+- Craft CMS 5.0.0+
+- PHP 8.1+
+- A CleverReach account with an OAuth app (Account → Extras → REST API) using the **Client Credentials** grant
+- Craft Commerce 5, only for the order push and the product catalog
 
 ## Installation
 
-```bash
+```sh
 composer require kernpfad/craft-cleverreach
 php craft plugin/install cleverreach
 ```
 
-Die Installation legt die Tabelle `cleverreach_consentlog` an (eigener DSGVO-Nachweis für erteilte Einwilligungen, unabhängig vom CleverReach-eigenen DOI-Log).
+Installation creates the `cleverreach_consentlog` table, which holds your own record of consent, independent of CleverReach's double opt-in log.
 
-## Konfiguration
+## Configuration
 
-1. In CleverReach unter *Account → Extras → REST API* eine OAuth-App mit Grant-Typ **Client Credentials** anlegen.
-2. Client-ID/-Secret als Umgebungsvariablen hinterlegen, z. B. in `.env`:
+1. In CleverReach, under *Account → Extras → REST API*, create an OAuth app with the **Client Credentials** grant.
+2. Store the client ID and secret as environment variables:
+
    ```
    CLEVERREACH_CLIENT_ID="..."
    CLEVERREACH_CLIENT_SECRET="..."
    ```
-3. In Craft unter *Einstellungen → Plugins → CleverReach* die Variablennamen (`$CLEVERREACH_CLIENT_ID` / `$CLEVERREACH_CLIENT_SECRET`), die Standard-Zielgruppe (Group-ID), die Double-Opt-in-Formular-ID sowie optional das Attribut-Mapping und den Order-Push-Schalter eintragen.
 
-Es findet **kein** OAuth-Browser-Handshake statt: Der Client-Credentials-Grant authentifiziert das Plugin direkt server-seitig gegen den CleverReach-Account, der die OAuth-App angelegt hat.
+3. Under *Settings → Plugins → CleverReach*, enter the variable names (`$CLEVERREACH_CLIENT_ID` / `$CLEVERREACH_CLIENT_SECRET`), the default group ID, the double opt-in form ID, and optionally the attribute mapping and the order-push switch.
 
-## Newsletter-Anmeldung einbinden
+There is no OAuth browser handshake. The client credentials grant authenticates the plugin server-side against the account that created the OAuth app.
 
-Jedes Formular kann per POST gegen den Anmelde-Endpoint senden:
+## Settings
+
+| Setting | Default | Description |
+|---|---|---|
+| `oauthClientId` | empty | Env var reference holding the OAuth client ID. |
+| `oauthClientSecret` | empty | Env var reference holding the OAuth client secret. |
+| `defaultGroupId` | `null` | CleverReach group new receivers are added to. |
+| `doiFormId` | `null` | Double opt-in form used to trigger the confirmation mail. |
+| `attributeMapping` | none | Craft field handle → CleverReach attribute name. |
+| `enableOrderPush` | `false` | Push completed Commerce orders for existing subscribers. |
+| `enableCatalog` | `false` | Expose Commerce products to CleverReach's My Content search. |
+| `catalogPassword` | empty | Env var reference for the optional catalog request password. |
+| `catalogImageFieldHandle` | `null` | Assets field on the product used as the item image. |
+| `catalogImageTransformHandle` | `null` | Named image transform applied to that image. |
+| `catalogDescriptionFieldHandle` | `null` | Field used as the item description. |
+
+Credentials are stored as env var references, so the secrets themselves never reach `project.yaml` or version control.
+
+## Newsletter signup
+
+Any form can POST to the signup endpoint:
 
 ```html
 <form method="post" action="/">
     {{ csrfInput() }}
     {{ actionInput('cleverreach/subscribe/subscribe') }}
-    {{ redirectInput('danke') }}
+    {{ redirectInput('thanks') }}
 
     <input type="email" name="email" required>
-    <label><input type="checkbox" name="consent" value="1" required> Ich möchte den Newsletter erhalten.</label>
+    <label><input type="checkbox" name="consent" value="1" required> I would like to receive the newsletter.</label>
     <input type="hidden" name="consentTextVersion" value="2026-07">
 
-    <!-- optionale, im Attribut-Mapping konfigurierte Zusatzfelder -->
+    <!-- optional extra fields, as configured in the attribute mapping -->
     <input type="text" name="fields[firstName]">
 
-    <button type="submit">Anmelden</button>
+    <button type="submit">Subscribe</button>
 </form>
 ```
 
-Ablauf: Empfänger wird bei CleverReach als **inaktiv** angelegt, die Double-Opt-in-Mail wird ausgelöst, und ein eigener Consent-Nachweis (E-Mail, IP, Quelle, Zeitstempel, Consent-Text-Version) wird in `cleverreach_consentlog` gespeichert. Die eigentliche Aktivierung erfolgt bei CleverReach über den Bestätigungslink in der DOI-Mail.
+The recipient is created at CleverReach as **inactive**, the double opt-in mail is triggered, and a consent record — email, IP, source, timestamp, consent text version — is written to `cleverreach_consentlog`. Activation happens at CleverReach through the confirmation link.
 
-## Formie-Integration (optional, alternative zum generischen Endpoint)
+## Formie integration
 
-Ist [Formie](https://verbb.io/craft-plugins/formie) installiert, erscheint unter *Formie → Integrationen → Email Marketing* zusätzlich **"CleverReach (Double-Opt-in)"** — auswählbar im normalen Formie-Feld-Mapping-Editor (Zielgruppe + Felder werden live aus der CleverReach-API geladen).
+With [Formie](https://verbb.io/craft-plugins/formie) installed, a **CleverReach (Double Opt-in)** integration appears under *Formie → Integrations → Email Marketing*, selectable in the normal field-mapping editor. Groups and fields are loaded live from the CleverReach API.
 
-**Wichtig:** Formie bringt bereits eine eigene, eingebaute "CleverReach"-Integration mit. Der Unterschied:
+Formie ships its own built-in CleverReach integration. The difference:
 
-| | Formies eingebaute "CleverReach" | Dieses Plugin: "CleverReach (Double-Opt-in)" |
+| | Formie's built-in CleverReach | This plugin's CleverReach (Double Opt-in) |
 |---|---|---|
-| Aktivierung | Sofort (`activated: time()`), **kein** Double-Opt-in | Immer als DOI-pending angelegt, Aktivierung nur über Bestätigungslink |
-| Zugangsdaten | Eigene, separate OAuth-Verbindung pro Formular-Integration | Nutzt die zentral im CleverReach-Plugin konfigurierten Zugangsdaten |
-| Consent-Nachweis | Keiner | Schreibt in `cleverreach_consentlog`, wie Baustein A |
+| Activation | Immediate (`activated: time()`), no double opt-in | Always created as opt-in pending; activation only via the confirmation link |
+| Credentials | A separate OAuth connection per form integration | The credentials configured centrally in this plugin |
+| Consent record | None | Written to `cleverreach_consentlog` |
 
-Wer keine DSGVO-Nachweispflicht-Garantien braucht, kann einfach Formies eingebaute Integration nutzen. Für alles, was mit der restlichen Plugin-Logik (Consent-Log, Commerce-Order-Push) konsistent sein soll, dieses Plugin verwenden. Beide Wege — generischer Endpoint und native Formie-Integration — landen im selben `SubscriberService` und verhalten sich identisch.
+If you don't need documented proof of consent, Formie's built-in integration is fine. Use this one where consent logging and the Commerce order push have to stay consistent. Both paths — the generic endpoint and the native Formie integration — run through the same `SubscriberService` and behave identically.
 
-## Craft-Commerce-Order-Push (optional)
+## Commerce order push
 
-Wenn Craft Commerce installiert und der Schalter "Bestellungen an CleverReach senden" aktiv ist, wird bei jedem abgeschlossenen Order (`Order::EVENT_AFTER_COMPLETE_ORDER`) geprüft, ob für die Bestell-E-Mail bereits ein Consent-Nachweis vorliegt. Nur dann werden die Bestelldaten (Nummer, Datum, Summe, Positionen) an CleverReach übertragen — **es wird nie automatisch ein neuer Empfänger allein aufgrund einer Bestellung angelegt.**
+With Commerce installed and the order-push switch on, every completed order (`Order::EVENT_AFTER_COMPLETE_ORDER`) is checked against the consent log. Order data — number, date, total, line items — is transmitted only when consent already exists for that address. **A new recipient is never created from an order alone.**
 
-Die eigentlichen Automations (Willkommensmail nach Erstkauf, Reaktivierung, Post-Purchase) werden CleverReach-seitig als Flows konfiguriert — das Plugin liefert nur die Datenbasis.
+The automations themselves (welcome mail after a first purchase, reactivation, post-purchase) are configured as flows on the CleverReach side. This plugin supplies the data.
 
-## Craft-User-Verknüpfung
+## Craft user linking
 
-Jeder Consent-Log-Eintrag (`cleverreach_consentlog.userId`) wird automatisch mit einem bestehenden Craft-User verknüpft, sofern die Anmelde-E-Mail zu einem Account passt (`craft\services\Users::getUserByUsernameOrEmail()`) — unabhängig davon, ob die Person beim Anmelden eingeloggt war. Die Verknüpfung ist rein informativ/für Reporting (Fremdschlüssel mit `ON DELETE SET NULL`, damit der Consent-Nachweis auch nach einer gelöschten Nutzer:in erhalten bleibt) und beeinflusst das Double-Opt-in-Verhalten nicht.
+Each consent log entry is linked to a matching Craft user by email, whether or not the person was logged in when subscribing. The link is informational, for reporting; the foreign key uses `ON DELETE SET NULL` so the consent record survives a deleted user. It does not affect double opt-in behaviour.
 
-Darauf aufbauend zwei Features, die automatisch aktiv sind (kein Schalter, kein Commerce nötig):
+Two features build on it, both always active and neither requiring Commerce:
 
-- **Sync bei User-Save:** Wird ein Craft-User gespeichert (CP oder Frontend-Profil), werden dessen Attribute (über dasselbe Attribut-Mapping wie bei der Anmeldung) an CleverReach übertragen — **aber nur**, wenn für diesen User bereits ein Consent-Log-Eintrag existiert. Ein Speichern legt niemals eine neue Anmeldung an. CleverReach-Ausfälle blockieren dabei nie das Speichern des Profils — Fehler werden geloggt, nicht geworfen. Wie beim Commerce-Order-Push wird dabei `activated: true` gesendet (siehe `UserSyncService`); dieselbe bewusste Kompromiss-Entscheidung wie bei Baustein C.
-- **Newsletter-Status im User-CP-Profil:** Existiert ein Consent-Log-Eintrag, erscheint im "Details"-Bereich der User-Bearbeitungsseite eine Zeile "Newsletter (CleverReach)" mit Anmeldedatum und Quelle. Für User ohne Consent-Eintrag wird nichts angezeigt (kein "Nicht angemeldet", um die Detailleiste bei vielen Nicht-Abonnent:innen nicht zu überfrachten).
+- **Sync on user save.** Saving a Craft user transmits their attributes, through the same mapping used at signup — but only if a consent log entry already exists for them. Saving never creates a new subscription. A CleverReach outage never blocks the save; errors are logged, not thrown.
+- **Newsletter status in the user profile.** Where a consent entry exists, the user edit screen's Details pane shows a *Newsletter (CleverReach)* line with the signup date and source. Nothing is shown for users without one.
 
-## Import von Alt-Kontakten
+## Importing existing contacts
 
-`php craft cleverreach/import/{users|customers|csv}` importiert bestehende Kontakte einmalig in CleverReach. Ohne `--confirm` ist jeder Lauf ein Dry-Run (nur Zählung, keine Schreibvorgänge).
+```sh
+php craft cleverreach/import/{users|customers|csv}
+```
 
-Der Consent-Umgang ist pro Lauf frei wählbar über `--consentMode`, keine feste Vorgabe des Plugins:
+Without `--confirm` every run is a dry run: it counts, it writes nothing.
 
-| Modus | Verhalten |
+Consent handling is chosen per run through `--consentMode`; the plugin imposes no default:
+
+| Mode | Behaviour |
 |---|---|
-| `require-consent` | Nur Kontakte mit belegbarem Bestandsconsent (Craft-Feld bzw. CSV-Spalte) werden importiert — direkt aktiviert, kein erneutes DOI. Alle anderen werden übersprungen. |
-| `doi` | Alle Kontakte werden wie Neuanmeldungen behandelt: inaktiv angelegt, CleverReach verschickt die Bestätigungsmail. Niemand wird ohne frische Bestätigung aktiv. |
-| `activate` | Alle Kontakte werden sofort aktiviert, ohne Prüfung. Erfordert zusätzlich `--acceptResponsibility=1` als bewusste Bestätigung, dass außerhalb des Plugins eine Rechtsgrundlage vorliegt — das Plugin verifiziert hier nichts automatisch. |
+| `require-consent` | Only contacts with demonstrable existing consent — a Craft field or CSV column — are imported, activated directly with no fresh opt-in. Everyone else is skipped. |
+| `doi` | Every contact is treated as a new signup: created inactive, CleverReach sends the confirmation mail. Nobody becomes active without fresh confirmation. |
+| `activate` | Every contact is activated immediately, unchecked. Additionally requires `--acceptResponsibility=1` as a deliberate confirmation that a legal basis exists outside the plugin. Nothing is verified automatically here. |
 
-Beispiele:
+Examples:
 
-```bash
-# Craft-User mit vorhandenem Opt-in-Feld "newsletterOptIn" importieren
+```sh
+# Craft users carrying an existing opt-in field
 php craft cleverreach/import/users --consentMode=require-consent --consentField=newsletterOptIn --confirm
 
-# Alle Commerce-Kunden (aus abgeschlossenen Bestellungen) per DOI anschreiben
+# All Commerce customers from completed orders, via double opt-in
 php craft cleverreach/import/customers --consentMode=doi --confirm
 
-# CSV-Export aus einem Alt-System, frei konfigurierbares Spalten-Mapping
+# CSV export from a legacy system, with a freely configurable column mapping
 php craft cleverreach/import/csv \
-  --file=/pfad/legacy.csv \
-  --mapping="E-Mail:email,Vorname:firstname,Opt-In:consent" \
+  --file=/path/legacy.csv \
+  --mapping="E-Mail:email,First name:firstname,Opt-In:consent" \
   --consentMode=require-consent --confirm
 ```
 
-`--mapping` ist eine kommagetrennte Liste `Spaltenname:Ziel`. Die Ziele `email` und `consent` sind reserviert (E-Mail-Spalte bzw. Consent-Flag-Spalte, Werte wie `1`/`true`/`yes`/`ja` gelten als vorhanden); alle anderen Ziele werden 1:1 als CleverReach-Attribut übernommen. `--groupId` überschreibt bei Bedarf die Standard-Zielgruppe. Fehlgeschlagene Einzelkontakte (z. B. API-Fehler) brechen den Lauf nicht ab, sondern werden am Ende gesammelt gemeldet.
+`--mapping` is a comma-separated list of `column:target`. The targets `email` and `consent` are reserved — the email column and the consent flag column, where `1`, `true`, `yes` and `ja` count as present. Every other target becomes a CleverReach attribute as-is. `--groupId` overrides the default group. Individual failures, such as API errors, do not abort the run; they are collected and reported at the end.
 
-## Produktkatalog ("My Content", Baustein D)
+## Product catalog
 
-Stellt Craft-Commerce-Produkte über CleverReachs [„My Content“-Schnittstelle](https://developers.cleverreach.com/mycontent/) bereit, damit Redakteur:innen im CleverReach-Editor direkt im Shop-Katalog suchen und Treffer per Klick in die Kampagne einfügen können — ohne manuelles Kopieren von Produktdaten.
+Exposes Craft Commerce products through CleverReach's [My Content](https://developers.cleverreach.com/mycontent/) interface, so editors can search the shop catalog inside the CleverReach editor and insert results into a campaign without copying product data by hand.
 
-**Einrichtung:**
+**Setup:**
 
-1. In den Plugin-Settings *Produktkatalog aktivieren*, optional ein Passwort (Umgebungsvariable) sowie das Assets-Feld-Handle fürs Produktbild, einen Bild-Transform und ein Beschreibungs-Feld-Handle hinterlegen.
-2. Bei CleverReach unter *Eigener Content* die Produktsuch-URL eintragen:
+1. In the plugin settings, enable the catalog and optionally set a password (as an env var), the assets field handle for the product image, an image transform, and a description field handle.
+2. In CleverReach, under *My Content*, enter the product search URL:
+
    ```
-   https://ihre-domain.tld/index.php?p=actions/cleverreach/catalog/search&password=IHR_PASSWORT
+   https://your-domain.tld/index.php?p=actions/cleverreach/catalog/search&password=YOUR_PASSWORD
    ```
-   (Ohne `omitScriptNameInUrls`/Pretty-URLs entsprechend anpassen. Das `password` ist nur nötig, wenn eines konfiguriert ist.)
 
-**Wie es funktioniert:** Eine einzige URL beantwortet zwei von CleverReach gesendete Aufrufe, unterschieden über den `get`-Query-Parameter:
+   Adjust for pretty URLs as needed. The `password` parameter is only required if one is configured.
 
-- `?get=filter` — liefert die im Editor angezeigten Suchfilter: ein Freitext-Suchfeld (sucht im Produkttitel) und ein Dropdown mit den echten Commerce-Produkttypen des Shops.
-- `?get=search` — bekommt die gewählten Filterwerte als POST-Parameter zurück (`q`, `productTypeId`) und liefert passende, veröffentlichte Produkte mit Titel, Live-URL, Preis (`getBasePrice()`, formatiert in der Store-Währung) sowie optional Bild und Beschreibung.
+**How it works.** A single URL answers both calls CleverReach makes, distinguished by the `get` query parameter:
 
-Der Endpoint ist bewusst nur lesend und **ohne Craft-CSRF-Schutz** (CleverReachs Server rufen ihn ohne Craft-Session auf) — Absicherung erfolgt über das optionale Passwort. Nur wirksam, wenn Craft Commerce installiert und der Schalter aktiv ist.
+- `?get=filter` returns the search filters shown in the editor: a free-text field searching the product title, and a dropdown of the shop's real Commerce product types.
+- `?get=search` receives the chosen filter values as POST parameters (`q`, `productTypeId`) and returns matching published products with title, live URL and price formatted in the store currency, plus the image and description when configured.
 
-## Status / offene Punkte
+The endpoint is read-only and deliberately runs **without Craft's CSRF protection**, since CleverReach's servers call it without a Craft session. The optional password is what secures it. It is only active with Commerce installed and the switch enabled.
 
-- Grundgerüst für Baustein A (Double-Opt-in-Anmeldung), B (Attribut-Mapping) und C (Commerce-Order-Push) ist umgesetzt.
-- **Praxisgetestet:** Plugin wurde in einer echten Craft-5-/Commerce-5-Installation (Composer-Path-Repository, PostgreSQL) installiert, aktiviert und durchlaufen: CP-Settings-Seite rendert und persistiert korrekt, der Subscribe-Endpoint validiert CSRF/E-Mail/Consent und ruft tatsächlich `https://rest.cleverreach.com/oauth/token.php` auf (mit Test-Credentials korrekt mit `invalid_client` abgelehnt, sauber als Fehler behandelt statt zu crashen), und die Commerce-Order-Push-Wiring lädt ohne Fataler-Fehler, wenn Commerce installiert ist. Alle in `CommerceOrderPushService` verwendeten Order-/LineItem-Properties (`totalPrice`, `salePrice`, `qty` — Yii-"virtuelle" Getter-Properties) wurden per Reflection gegen die echte Commerce-5-Klasse verifiziert.
-- **Formie-Integration ebenfalls praxisgetestet:** In einer separaten Craft-5-/Formie-3.1-Installation registriert sich `CleverReachEmailMarketing` nachweislich korrekt in Formies `emailMarketing`-Integrationsliste (per Reflection gegen `Formie::$plugin->getIntegrations()->getAllIntegrationTypes()` geprüft), `fetchFormSettings()` erreicht ebenfalls den echten CleverReach-Endpoint, und die `listId`-Pflichtfeld-Validierung greift. Dabei fiel ein echter Bug auf und wurde behoben: `CleverReachApiService::getAttributes()` kollidierte mit `yii\base\Model::getAttributes()` (da `craft\base\Component` von `Model` erbt) und verursachte einen Fatal Compile Error — umbenannt zu `getReceiverAttributes()`.
-- **Endpoint-Korrektur durch Recherche:** Der Receiver-Endpoint ist jetzt `POST /v3/groups/{group}/receivers/upsert` (Batch-Payload `[[...]]`) statt des ursprünglich vermuteten `POST /v3/groups/{group}/receivers` — verifiziert durch Lektüre des Quellcodes von Formies eigener, offiziell mitgelieferter CleverReach-Integration (`vendor/verbb/formie/src/integrations/emailmarketing/CleverReach.php`), die exakt dieselbe API anspricht. Der frühere "nicht verifiziert"-Hinweis zum Upsert-Verhalten ist damit durch eine glaubwürdige Quelle (nicht die offizielle CleverReach-Doku selbst, aber ein produktiv genutztes drittes Integrations-Codebase) aufgelöst.
-- **Import-Command praxisgetestet:** Alle drei Quellen (`users`, `customers`, `csv`) in derselben Craft-5-/Commerce-5-Installation durchlaufen — Dry-Run-Zählung, `require-consent`-Skip-Logik, die `--acceptResponsibility`-Sperre für `activate`, und ein echter `--confirm`-Lauf (CleverReach-API korrekt erreicht, Fehler pro Kontakt gesammelt statt Abbruch, kein Consent-Log-Eintrag bei fehlgeschlagenem API-Call). Dabei fiel ein weiterer echter Bug auf und wurde behoben: Eine private Methode `run()` im Controller kollidierte mit der öffentlichen `yii\base\Controller::run()` (Fatal Compile Error) — umbenannt zu `processContacts()`.
-- **Produktkatalog praxisgetestet:** Echtes Produkt mit Variante in einer Craft-5-/Commerce-5-Installation angelegt und den kompletten HTTP-Roundtrip durchgespielt (`?get=filter`, `?get=search` mit/ohne/falschem Passwort, Treffer- und Leer-Suche). Dabei fielen zwei echte Bugs auf und wurden behoben:
-  1. `Variant::getPrice()` liefert Commerce 5s berechneten Catalog-Pricing-Preis (abhängig von einem Regel-Cache, kann `null` sein) — für den tatsächlich am Produkt hinterlegten Preis ist `getBasePrice()` richtig, jetzt entsprechend umgestellt.
-  2. `Store::getCurrency()` liefert kein Währungscode-String, sondern ein `Money\Currency`-Objekt (stringifiziert sich unauffällig zu z. B. "USD", daher beim bloßen Anschauen der Ausgabe leicht zu übersehen) — führte zu einem Fatal Error tief in Yiis Zahlenformatierung. Jetzt explizit auf `string` gecastet.
-  3. Der Endpoint schlug mit HTTP 400 fehl, weil Crafts CSRF-Schutz standardmäßig aktiv ist — CleverReachs Server senden aber keinen Session-gebundenen CSRF-Token. `CatalogController` hat jetzt `$enableCsrfValidation = false` (unkritisch, da rein lesend; Absicherung läuft über das Passwort).
-- Nur Craft CMS 5 wird unterstützt (siehe "Status" oben).
-- Katalog-Bildpfad (`getFieldValue()`/`Asset::getUrl()`) ist per Reflection gegen echte Craft-5-Klassen verifiziert, aber nicht mit einem echten Assets-Volume durchgespielt (Setup dafür war im Testrahmen zu aufwändig für den Nutzen) — bei Bedarf vor Produktivbetrieb einmal mit einem echten Produktbild gegentesten.
-- **User-Sync/Status-Anzeige praxisgetestet, inkl. Negativpfad:** In einer echten Craft-5-Installation einen Consent-Log-Eintrag für den Admin-User angelegt, die CP-Profilseite abgerufen (Newsletter-Zeile erscheint korrekt mit Datum/Quelle) und das Profil per echtem CP-Save-Request gespeichert — der Sync griff, erreichte tatsächlich die CleverReach-API (mit Test-Credentials korrekt mit `invalid_client` abgelehnt), und der Fehler wurde geloggt statt das Speichern zu blockieren (HTTP 200, "User saved."). `ConsentLogRecord::dateCreated` ist entgegen einer möglichen Annahme kein `DateTime`-Objekt, sondern ein roher Datums-String — `Craft::$app->getFormatter()->asDate()` verarbeitet das aber korrekt, kein Bug. Der Negativpfad ließ sich zunächst wegen einer Craft-Solo-Edition-Beschränkung (nur ein User-Account erlaubt) nicht mit einem zweiten echten User durchspielen — Craft erlaubt aber auf privaten/Dev-Domains (`localhost`, `127.0.0.1`, `.test`, `.ddev.site`, …) ein kostenloses Pro-Trial ohne Lizenzschlüssel (`POST admin/actions/app/try-edition`), damit war ein zweiter User möglich: für ihn erscheint nachweislich **keine** Newsletter-Zeile, und ein echter Profil-Save löst **keinen** CleverReach-API-Call aus (Logs vor/nach dem Save verglichen, keine CleverReach-Einträge).
+## Limitations
 
-## Lizenz
+- Craft CMS 5 only.
+- The catalog image path has not been exercised against a real assets volume. Verify it once with a real product image before going live.
 
-MIT
+## License
+
+Licensed under the [MIT License](LICENSE.md).
+
+[Legal notice](https://kernpfad.dev/en/legal-notice) · [Privacy policy](https://kernpfad.dev/en/privacy-policy) · [Terms and conditions](https://kernpfad.dev/en/terms-and-conditions)

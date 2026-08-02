@@ -30,9 +30,9 @@ use verbb\formie\models\IntegrationFormSettings;
  * vendor/verbb/formie/src/integrations/emailmarketing/CleverReach.php)
  * and authenticates via its own separate per-integration OAuth
  * connection. This one always creates receivers as DOI-pending and
- * writes to this plugin's own consent log (see Feinkonzept Abschnitt 9),
+ * writes to this plugin's own consent log,
  * reusing the single OAuth connection already configured on the
- * CleverReach plugin's own settings page — consistent with Baustein A/C
+ * CleverReach plugin's own settings page — consistent with how it behaves
  * everywhere else in this plugin. Site builders who don't need the DOI/
  * consent-log guarantees can just use Formie's bundled one instead;
  * displayName() is deliberately distinct so both can be told apart in

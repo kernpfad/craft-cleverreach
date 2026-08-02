@@ -55,8 +55,8 @@ class Plugin extends BasePlugin
         }
 
         // Craft Commerce is an optional dependency: this plugin works standalone
-        // for newsletter signup (Baustein A/B) and only wires up order push
-        // (Baustein C) when Commerce is actually installed and enabled.
+        // for newsletter signup and only wires up the order push when
+        // Commerce is actually installed and enabled.
         if ($this->getSettings()->enableOrderPush && class_exists(\craft\commerce\Plugin::class)) {
             $this->attachCommerceEventHandlers();
         }

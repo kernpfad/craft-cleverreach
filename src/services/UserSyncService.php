@@ -18,7 +18,7 @@ use Throwable;
  *
  * Like CommerceOrderPushService, this sends `activated: true` on every
  * sync (see CleverReachApiService::activateReceiver()) — the same
- * accepted trade-off already made for Baustein C: since we don't poll
+ * accepted trade-off already made for the order push: since we don't poll
  * CleverReach for whether a DOI-pending receiver has actually confirmed
  * yet, a profile-save sync could in theory activate someone slightly
  * early. Kept consistent with the rest of the plugin rather than

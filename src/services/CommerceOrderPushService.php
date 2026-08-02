@@ -8,7 +8,7 @@ use kernpfad\cleverreach\Plugin;
 use kernpfad\cleverreach\records\ConsentLogRecord;
 
 /**
- * Baustein C: pushes a completed Craft Commerce order to CleverReach so
+ * Pushes a completed Craft Commerce order to CleverReach so
  * CleverReach's own automation flows (welcome mail after first order,
  * reactivation, post-purchase) can react to it.
  *
@@ -27,7 +27,7 @@ class CommerceOrderPushService extends Component
             return;
         }
 
-        // Per Feinkonzept Abschnitt 8/9: never create a receiver purely because
+        // Never create a receiver purely because
         // of an order — only push order data for people who already opted in.
         if (!$this->hasExistingConsent($email)) {
             return;

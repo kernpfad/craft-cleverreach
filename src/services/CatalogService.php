@@ -9,7 +9,7 @@ use craft\elements\Asset;
 use kernpfad\cleverreach\Plugin;
 
 /**
- * Baustein D: implements CleverReach's "My Content" product-search
+ * Implements CleverReach's "My Content" product-search
  * contract (https://developers.cleverreach.com/mycontent/) against Craft
  * Commerce products, so editors can browse the real shop catalog from
  * inside CleverReach's drag-and-drop email editor.

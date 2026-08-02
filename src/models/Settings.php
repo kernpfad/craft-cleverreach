@@ -39,7 +39,7 @@ class Settings extends Model
     public bool $enableOrderPush = false;
 
     /**
-     * Baustein D: exposes Craft Commerce products to CleverReach's "My
+     * Exposes Craft Commerce products to CleverReach's "My
      * Content" product-search interface, so editors can browse and insert
      * real shop products while composing a campaign.
      */

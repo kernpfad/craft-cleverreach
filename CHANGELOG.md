@@ -1,5 +1,11 @@
 # Changelog
 
-## 1.0.0-alpha
+## 1.0.0 - Unreleased
 
-- Initial plugin skeleton: Double-Opt-in-Anmeldung (Baustein A), Attribut-Mapping (Baustein B), optionaler Craft-Commerce-Order-Push (Baustein C).
+- Double opt-in newsletter signup with its own consent log, independent of CleverReach's.
+- Attribute mapping from Craft fields to CleverReach attributes.
+- Native Formie integration, as an alternative to the generic subscribe endpoint.
+- Optional Craft Commerce order push for existing subscribers.
+- Craft user linking, with attribute sync on user save and a newsletter status panel on the user profile.
+- Import command for existing contacts from Craft users, Commerce customers or a CSV file, with a per-run consent mode.
+- Optional product catalog exposed through CleverReach's My Content interface.

@@ -14,7 +14,7 @@ use yii\console\ExitCode;
  * Craft Commerce customers, or an arbitrary CSV export.
  *
  * Consent handling is a deliberate per-run choice for the operator, not a
- * fixed policy (see Feinkonzept Abschnitt 13, Frage 6):
+ * fixed policy:
  *
  *   --consentMode=require-consent  Only import contacts with existing,
  *                                  verifiable consent evidence (a Craft

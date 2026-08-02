@@ -1,6 +1,6 @@
 {
     "name": "kernpfad/craft-cleverreach",
-    "description": "DSGVO-konforme CleverReach-Newsletter-Integration für Craft CMS: Double-Opt-in-Anmeldung, Attribut-Sync und optionaler Craft-Commerce-Order-Push.",
+    "description": "GDPR-compliant CleverReach newsletter integration for Craft CMS: double opt-in signup, attribute sync, and an optional Craft Commerce order push.",
     "type": "craft-plugin",
     "license": "MIT",
     "support": {
@@ -22,8 +22,8 @@
         "guzzlehttp/guzzle": "^7.0"
     },
     "suggest": {
-        "craftcms/commerce": "Erforderlich, um abgeschlossene Bestellungen an CleverReach zu pushen (Baustein C).",
-        "verbb/formie": "Ermöglicht eine native Formie-Integration im Feld-Mapping-Editor, als Alternative zum generischen actions/cleverreach/subscribe/subscribe-Endpoint."
+        "craftcms/commerce": "Required to push completed orders to CleverReach, and for the product catalog.",
+        "verbb/formie": "Adds a native CleverReach integration to Formie's field-mapping editor, as an alternative to the generic subscribe endpoint."
     },
     "autoload": {
         "psr-4": {

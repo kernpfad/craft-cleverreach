@@ -11,7 +11,7 @@ use yii\web\Response;
 /**
  * Implements CleverReach's "My Content" product-search contract
  * (https://developers.cleverreach.com/mycontent/) for Craft Commerce
- * products (Baustein D).
+ * products.
  *
  * A single URL handles both operations CleverReach calls, switched via
  * the `get` query param — matching their contract exactly rather than

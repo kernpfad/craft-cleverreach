@@ -9,7 +9,7 @@ use kernpfad\cleverreach\records\ConsentLogRecord;
  * Records an independent double-opt-in consent proof on the Craft side
  * (timestamp, IP, source, consent text version) — kept separate from
  * CleverReach's own DOI confirmation log, per German Nachweispflicht
- * best practice (see Feinkonzept, Abschnitt 9).
+ * best practice.
  */
 class ConsentService extends Component
 {
