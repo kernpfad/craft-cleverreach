@@ -1,11 +1,11 @@
 <?php
 
-namespace fipschen95\cleverreach\services;
+namespace kernpfad\cleverreach\services;
 
 use craft\base\Component;
 use craft\commerce\elements\Order;
-use fipschen95\cleverreach\Plugin;
-use fipschen95\cleverreach\records\ConsentLogRecord;
+use kernpfad\cleverreach\Plugin;
+use kernpfad\cleverreach\records\ConsentLogRecord;
 
 /**
  * Baustein C: pushes a completed Craft Commerce order to CleverReach so

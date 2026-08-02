@@ -1,10 +1,10 @@
 <?php
 
-namespace fipschen95\cleverreach\services;
+namespace kernpfad\cleverreach\services;
 
 use Craft;
 use craft\base\Component;
-use fipschen95\cleverreach\Plugin;
+use kernpfad\cleverreach\Plugin;
 
 /**
  * Maps a Craft signup form submission to a CleverReach double-opt-in

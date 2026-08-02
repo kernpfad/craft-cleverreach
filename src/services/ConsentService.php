@@ -1,9 +1,9 @@
 <?php
 
-namespace fipschen95\cleverreach\services;
+namespace kernpfad\cleverreach\services;
 
 use craft\base\Component;
-use fipschen95\cleverreach\records\ConsentLogRecord;
+use kernpfad\cleverreach\records\ConsentLogRecord;
 
 /**
  * Records an independent double-opt-in consent proof on the Craft side

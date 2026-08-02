@@ -1,6 +1,6 @@
 <?php
 
-namespace fipschen95\cleverreach\models;
+namespace kernpfad\cleverreach\models;
 
 use craft\base\Model;
 use craft\helpers\App;

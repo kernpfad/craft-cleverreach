@@ -1,6 +1,6 @@
 <?php
 
-namespace fipschen95\cleverreach\records;
+namespace kernpfad\cleverreach\records;
 
 use craft\db\ActiveRecord;
 

@@ -1,10 +1,10 @@
 <?php
 
-namespace fipschen95\cleverreach\services;
+namespace kernpfad\cleverreach\services;
 
 use Craft;
 use craft\base\Component;
-use fipschen95\cleverreach\Plugin;
+use kernpfad\cleverreach\Plugin;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use RuntimeException;
@@ -43,7 +43,7 @@ class CleverReachApiService extends Component
      * shape and payload wrapper (`[[...]]`, a batch of one) verified against
      * Formie's own bundled `verbb\formie\integrations\emailmarketing\CleverReach`
      * integration source — see also
-     * {@see \fipschen95\cleverreach\integrations\formie\CleverReachEmailMarketing}.
+     * {@see \kernpfad\cleverreach\integrations\formie\CleverReachEmailMarketing}.
      *
      * @param array<string, mixed> $attributes
      */

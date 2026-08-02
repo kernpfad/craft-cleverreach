@@ -1,10 +1,10 @@
 <?php
 
-namespace fipschen95\cleverreach\controllers;
+namespace kernpfad\cleverreach\controllers;
 
 use Craft;
 use craft\web\Controller;
-use fipschen95\cleverreach\Plugin;
+use kernpfad\cleverreach\Plugin;
 use Throwable;
 use yii\web\Response;
 

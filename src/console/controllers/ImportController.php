@@ -1,10 +1,10 @@
 <?php
 
-namespace fipschen95\cleverreach\console\controllers;
+namespace kernpfad\cleverreach\console\controllers;
 
 use craft\console\Controller;
 use craft\elements\User;
-use fipschen95\cleverreach\Plugin;
+use kernpfad\cleverreach\Plugin;
 use RuntimeException;
 use Throwable;
 use yii\console\ExitCode;

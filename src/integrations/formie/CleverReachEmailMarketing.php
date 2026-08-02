@@ -1,10 +1,10 @@
 <?php
 
-namespace fipschen95\cleverreach\integrations\formie;
+namespace kernpfad\cleverreach\integrations\formie;
 
 use Craft;
 use craft\helpers\ArrayHelper;
-use fipschen95\cleverreach\Plugin;
+use kernpfad\cleverreach\Plugin;
 use Throwable;
 use verbb\formie\base\EmailMarketing;
 use verbb\formie\base\Integration;

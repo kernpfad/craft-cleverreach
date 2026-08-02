@@ -1,12 +1,12 @@
 <?php
 
-namespace fipschen95\cleverreach\services;
+namespace kernpfad\cleverreach\services;
 
 use Craft;
 use craft\base\Component;
 use craft\commerce\elements\Product;
 use craft\elements\Asset;
-use fipschen95\cleverreach\Plugin;
+use kernpfad\cleverreach\Plugin;
 
 /**
  * Baustein D: implements CleverReach's "My Content" product-search

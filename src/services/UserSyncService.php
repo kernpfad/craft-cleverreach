@@ -1,12 +1,12 @@
 <?php
 
-namespace fipschen95\cleverreach\services;
+namespace kernpfad\cleverreach\services;
 
 use Craft;
 use craft\base\Component;
 use craft\elements\User;
 use craft\helpers\ElementHelper;
-use fipschen95\cleverreach\Plugin;
+use kernpfad\cleverreach\Plugin;
 use Throwable;
 
 /**

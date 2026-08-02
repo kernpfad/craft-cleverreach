@@ -1,6 +1,6 @@
 <?php
 
-namespace fipschen95\cleverreach;
+namespace kernpfad\cleverreach;
 
 use Craft;
 use craft\base\Model;
@@ -9,13 +9,13 @@ use craft\elements\User;
 use craft\events\DefineMetadataEvent;
 use craft\events\ModelEvent;
 use craft\helpers\ElementHelper;
-use fipschen95\cleverreach\models\Settings;
-use fipschen95\cleverreach\services\CatalogService;
-use fipschen95\cleverreach\services\CleverReachApiService;
-use fipschen95\cleverreach\services\CommerceOrderPushService;
-use fipschen95\cleverreach\services\ConsentService;
-use fipschen95\cleverreach\services\SubscriberService;
-use fipschen95\cleverreach\services\UserSyncService;
+use kernpfad\cleverreach\models\Settings;
+use kernpfad\cleverreach\services\CatalogService;
+use kernpfad\cleverreach\services\CleverReachApiService;
+use kernpfad\cleverreach\services\CommerceOrderPushService;
+use kernpfad\cleverreach\services\ConsentService;
+use kernpfad\cleverreach\services\SubscriberService;
+use kernpfad\cleverreach\services\UserSyncService;
 use yii\base\Event;
 
 /**
@@ -51,7 +51,7 @@ class Plugin extends BasePlugin
         // separate namespace from the web SubscribeController, and are only
         // relevant for console requests.
         if (Craft::$app->getRequest()->getIsConsoleRequest()) {
-            $this->controllerNamespace = 'fipschen95\\cleverreach\\console\\controllers';
+            $this->controllerNamespace = 'kernpfad\\cleverreach\\console\\controllers';
         }
 
         // Craft Commerce is an optional dependency: this plugin works standalone
@@ -146,7 +146,7 @@ class Plugin extends BasePlugin
             \verbb\formie\services\Integrations::class,
             \verbb\formie\services\Integrations::EVENT_REGISTER_INTEGRATIONS,
             function (\verbb\formie\events\RegisterIntegrationsEvent $event) {
-                $event->emailMarketing[] = \fipschen95\cleverreach\integrations\formie\CleverReachEmailMarketing::class;
+                $event->emailMarketing[] = \kernpfad\cleverreach\integrations\formie\CleverReachEmailMarketing::class;
             }
         );
     }

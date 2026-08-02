@@ -1,6 +1,6 @@
 <?php
 
-namespace fipschen95\cleverreach\migrations;
+namespace kernpfad\cleverreach\migrations;
 
 use craft\db\Migration;
 
