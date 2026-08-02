@@ -1,0 +1,36 @@
+{
+    "name": "fipschen95/craft-cleverreach",
+    "description": "DSGVO-konforme CleverReach-Newsletter-Integration für Craft CMS: Double-Opt-in-Anmeldung, Attribut-Sync und optionaler Craft-Commerce-Order-Push.",
+    "type": "craft-plugin",
+    "license": "MIT",
+    "keywords": [
+        "craft",
+        "cms",
+        "craftcms",
+        "craft-plugin",
+        "cleverreach",
+        "newsletter",
+        "email marketing"
+    ],
+    "require": {
+        "php": "^8.1",
+        "craftcms/cms": "^5.0.0",
+        "guzzlehttp/guzzle": "^7.0"
+    },
+    "suggest": {
+        "craftcms/commerce": "Erforderlich, um abgeschlossene Bestellungen an CleverReach zu pushen (Baustein C).",
+        "verbb/formie": "Ermöglicht eine native Formie-Integration im Feld-Mapping-Editor, als Alternative zum generischen actions/cleverreach/subscribe/subscribe-Endpoint."
+    },
+    "autoload": {
+        "psr-4": {
+            "fipschen95\\cleverreach\\": "src/"
+        }
+    },
+    "extra": {
+        "handle": "cleverreach",
+        "name": "CleverReach",
+        "developer": "fipschen95",
+        "documentationUrl": "https://github.com/fipschen95/craftcms-plugins/blob/main/cleverreach/README.md",
+        "class": "fipschen95\\cleverreach\\Plugin"
+    }
+}

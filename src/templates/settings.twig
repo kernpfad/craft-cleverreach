@@ -1,0 +1,121 @@
+{% import "_includes/forms" as forms %}
+
+<h2>{{ "OAuth-Zugangsdaten"|t('cleverreach') }}</h2>
+<p class="light">{{ "Unter CleverReach: Account → Extras → REST API eine OAuth-App anlegen (Client Credentials Grant genügt). Client-ID/-Secret als Umgebungsvariablen hinterlegen, hier nur den Variablennamen eintragen."|t('cleverreach') }}</p>
+
+{{ forms.textField({
+    label: "OAuth Client-ID"|t('cleverreach'),
+    instructions: "Name der Umgebungsvariable, z. B. $CLEVERREACH_CLIENT_ID"|t('cleverreach'),
+    id: 'oauthClientId',
+    name: 'oauthClientId',
+    value: settings.oauthClientId,
+    errors: settings.getErrors('oauthClientId'),
+}) }}
+
+{{ forms.textField({
+    label: "OAuth Client-Secret"|t('cleverreach'),
+    instructions: "Name der Umgebungsvariable, z. B. $CLEVERREACH_CLIENT_SECRET"|t('cleverreach'),
+    id: 'oauthClientSecret',
+    name: 'oauthClientSecret',
+    value: settings.oauthClientSecret,
+    errors: settings.getErrors('oauthClientSecret'),
+}) }}
+
+<hr>
+
+<h2>{{ "Listen & Formulare"|t('cleverreach') }}</h2>
+
+{{ forms.textField({
+    label: "Standard-Zielgruppe (Group-ID)"|t('cleverreach'),
+    id: 'defaultGroupId',
+    name: 'defaultGroupId',
+    value: settings.defaultGroupId,
+    size: 8,
+    errors: settings.getErrors('defaultGroupId'),
+}) }}
+
+{{ forms.textField({
+    label: "Double-Opt-in Formular-ID"|t('cleverreach'),
+    instructions: "CleverReach-Formular-ID für den Versand der Bestätigungsmail."|t('cleverreach'),
+    id: 'doiFormId',
+    name: 'doiFormId',
+    value: settings.doiFormId,
+    size: 8,
+    errors: settings.getErrors('doiFormId'),
+}) }}
+
+<hr>
+
+<h2>{{ "Attribut-Mapping"|t('cleverreach') }}</h2>
+
+{{ forms.editableTableField({
+    label: "Craft-Feld → CleverReach-Attribut"|t('cleverreach'),
+    instructions: "Ordnet Werte aus dem Anmeldeformular (fields[...]) CleverReach-Empfänger-Attributen zu."|t('cleverreach'),
+    id: 'attributeMapping',
+    name: 'attributeMapping',
+    cols: {
+        craftField: { heading: "Craft-Feld-Handle"|t('cleverreach'), type: 'singleline' },
+        cleverReachAttribute: { heading: "CleverReach-Attribut"|t('cleverreach'), type: 'singleline' },
+    },
+    rows: settings.attributeMapping,
+    addRowLabel: "Zeile hinzufügen"|t('cleverreach'),
+}) }}
+
+<hr>
+
+<h2>{{ "Craft Commerce"|t('cleverreach') }}</h2>
+
+{{ forms.lightswitchField({
+    label: "Bestellungen an CleverReach senden"|t('cleverreach'),
+    instructions: "Sendet abgeschlossene Bestellungen bereits angemeldeter (Double-Opt-in-bestätigter) Empfänger als Order-Daten an CleverReach, damit dortige Automation-Flows greifen. Nur wirksam, wenn Craft Commerce installiert ist. Legt niemals einen neuen Empfänger allein aufgrund einer Bestellung an."|t('cleverreach'),
+    id: 'enableOrderPush',
+    name: 'enableOrderPush',
+    on: settings.enableOrderPush,
+}) }}
+
+<hr>
+
+<h2>{{ "Produktkatalog (\"My Content\")"|t('cleverreach') }}</h2>
+<p class="light">{{ "Stellt Craft-Commerce-Produkte über CleverReachs „My Content“-Schnittstelle bereit, damit sie im Newsletter-Editor durchsuchbar und einfügbar sind. Nur wirksam, wenn Craft Commerce installiert ist."|t('cleverreach') }}</p>
+
+{{ forms.lightswitchField({
+    label: "Produktkatalog aktivieren"|t('cleverreach'),
+    id: 'enableCatalog',
+    name: 'enableCatalog',
+    on: settings.enableCatalog,
+}) }}
+
+{{ forms.textField({
+    label: "Passwort für die Produktsuch-URL"|t('cleverreach'),
+    instructions: "Name der Umgebungsvariable, z. B. $CLEVERREACH_CATALOG_PASSWORD. Leer lassen, um auf einen Passwortschutz zu verzichten. Dasselbe Passwort wird bei CleverReach als Teil der Produktsuch-URL hinterlegt (?password=...)."|t('cleverreach'),
+    id: 'catalogPassword',
+    name: 'catalogPassword',
+    value: settings.catalogPassword,
+    errors: settings.getErrors('catalogPassword'),
+}) }}
+
+{{ forms.textField({
+    label: "Bild-Feld (Assets-Feld-Handle am Produkt)"|t('cleverreach'),
+    id: 'catalogImageFieldHandle',
+    name: 'catalogImageFieldHandle',
+    value: settings.catalogImageFieldHandle,
+    errors: settings.getErrors('catalogImageFieldHandle'),
+}) }}
+
+{{ forms.textField({
+    label: "Bild-Transform-Handle (optional)"|t('cleverreach'),
+    instructions: "Name eines konfigurierten Craft-Bild-Transforms für Newsletter-taugliche Bildgrößen. Leer lassen für die Originalgröße."|t('cleverreach'),
+    id: 'catalogImageTransformHandle',
+    name: 'catalogImageTransformHandle',
+    value: settings.catalogImageTransformHandle,
+    errors: settings.getErrors('catalogImageTransformHandle'),
+}) }}
+
+{{ forms.textField({
+    label: "Beschreibungs-Feld (Feld-Handle am Produkt)"|t('cleverreach'),
+    instructions: "Optional. Leer lassen, wenn keine Beschreibung mitgegeben werden soll."|t('cleverreach'),
+    id: 'catalogDescriptionFieldHandle',
+    name: 'catalogDescriptionFieldHandle',
+    value: settings.catalogDescriptionFieldHandle,
+    errors: settings.getErrors('catalogDescriptionFieldHandle'),
+}) }}
