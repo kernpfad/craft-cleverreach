@@ -5,7 +5,10 @@
     "license": "MIT",
     "support": {
         "docs": "https://github.com/kernpfad/craft-cleverreach",
-        "issues": "https://github.com/kernpfad/craft-cleverreach/issues"
+        "issues": "https://github.com/kernpfad/craft-cleverreach/issues",
+        "email": "rene.neuburger@gmx.de",
+        "source": "https://github.com/kernpfad/craft-cleverreach",
+        "security": "https://github.com/kernpfad/craft-cleverreach/blob/main/SECURITY.md"
     },
     "keywords": [
         "craft",
@@ -41,5 +44,40 @@
         "imprintUrl": "https://kernpfad.dev/en/legal-notice",
         "privacyPolicyUrl": "https://kernpfad.dev/en/privacy-policy",
         "termsUrl": "https://kernpfad.dev/en/terms-and-conditions"
-    }
+    },
+    "authors": [
+        {
+            "name": "Kernpfad",
+            "homepage": "https://kernpfad.dev"
+        }
+    ],
+    "config": {
+        "allow-plugins": {
+            "craftcms/plugin-installer": true,
+            "yiisoft/yii2-composer": true
+        },
+        "preferred-install": "source",
+        "sort-packages": true
+    },
+    "require-dev": {
+        "craftcms/commerce": "^5.0.0",
+        "craftcms/ecs": "dev-main",
+        "craftcms/rector": "dev-craft6",
+        "phpstan/phpstan": "^2.2",
+        "verbb/formie": "^3.0"
+    },
+    "scripts": {
+        "check-cs": "ecs check --ansi",
+        "fix-cs": "ecs check --ansi --fix",
+        "phpstan": "phpstan analyse --memory-limit=1G --ansi",
+        "rector": "rector process --dry-run --ansi",
+        "rector:fix": "rector process --ansi",
+        "check": [
+            "@check-cs",
+            "@phpstan",
+            "@rector"
+        ]
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
 }

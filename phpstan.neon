@@ -1,0 +1,27 @@
+parameters:
+    level: 8
+    paths:
+        - src
+    tmpDir: .phpstan-cache
+    scanFiles:
+        - vendor/craftcms/cms/src/Craft.php
+        - vendor/yiisoft/yii2/Yii.php
+        - vendor/twig/twig/src/Extension/CoreExtension.php
+    scanDirectories:
+        - vendor/craftcms/commerce/src
+        - vendor/verbb/formie/src
+    stubFiles:
+        - phpstan/stubs/BaseYii.stub
+        - phpstan/stubs/console/Application.stub
+        - phpstan/stubs/web/Application.stub
+    earlyTerminatingMethodCalls:
+        Craft:
+            - dd
+        yii\base\Application:
+            - end
+        yii\base\ErrorHandler:
+            - convertExceptionToError
+    ignoreErrors:
+        -
+            identifier: method.notFound
+            message: '#craft\\(console|web)\\Request::#'

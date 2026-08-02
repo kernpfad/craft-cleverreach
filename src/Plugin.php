@@ -32,6 +32,16 @@ class Plugin extends BasePlugin
 {
     public bool $hasCpSettings = true;
 
+    public static function getInstance(): static
+    {
+        $instance = parent::getInstance();
+        if (!$instance instanceof static) {
+            throw new \RuntimeException('CleverReach plugin is not initialized.');
+        }
+
+        return $instance;
+    }
+
     public function init(): void
     {
         parent::init();
@@ -87,7 +97,7 @@ class Plugin extends BasePlugin
         Event::on(
             \craft\commerce\elements\Order::class,
             \craft\commerce\elements\Order::EVENT_AFTER_COMPLETE_ORDER,
-            function (Event $event) {
+            function(Event $event) {
                 /** @var \craft\commerce\elements\Order $order */
                 $order = $event->sender;
                 $this->commerceOrderPush->pushOrder($order);
@@ -105,12 +115,11 @@ class Plugin extends BasePlugin
         Event::on(
             User::class,
             User::EVENT_AFTER_SAVE,
-            function (ModelEvent $event) {
-                if (ElementHelper::isDraftOrRevision($event->sender)) {
+            function(ModelEvent $event) {
+                if (!$event->sender instanceof User || ElementHelper::isDraftOrRevision($event->sender)) {
                     return;
                 }
 
-                /** @var User $user */
                 $user = $event->sender;
                 $this->userSync->syncUser($user);
             }
@@ -119,12 +128,12 @@ class Plugin extends BasePlugin
         Event::on(
             User::class,
             User::EVENT_DEFINE_METADATA,
-            function (DefineMetadataEvent $event) {
+            function(DefineMetadataEvent $event) {
                 /** @var User $user */
                 $user = $event->sender;
                 $record = $this->consent->getLatestConsent($user->id, $user->email);
 
-                if ($record === null) {
+                if ($record === null || $record->dateCreated === null) {
                     return;
                 }
 
@@ -145,7 +154,7 @@ class Plugin extends BasePlugin
         Event::on(
             \verbb\formie\services\Integrations::class,
             \verbb\formie\services\Integrations::EVENT_REGISTER_INTEGRATIONS,
-            function (\verbb\formie\events\RegisterIntegrationsEvent $event) {
+            function(\verbb\formie\events\RegisterIntegrationsEvent $event) {
                 $event->emailMarketing[] = \kernpfad\cleverreach\integrations\formie\CleverReachEmailMarketing::class;
             }
         );

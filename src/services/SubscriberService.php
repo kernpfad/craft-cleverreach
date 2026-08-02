@@ -29,7 +29,7 @@ class SubscriberService extends Component
         string $ipAddress,
         ?int $groupId = null,
         ?string $consentTextVersion = null,
-        ?int $userId = null
+        ?int $userId = null,
     ): bool {
         return $this->subscribeWithAttributes(
             $email,
@@ -57,7 +57,7 @@ class SubscriberService extends Component
         string $ipAddress,
         ?int $groupId = null,
         ?string $consentTextVersion = null,
-        ?int $userId = null
+        ?int $userId = null,
     ): bool {
         $settings = Plugin::getInstance()->getSettings();
         $groupId ??= $settings->defaultGroupId;
@@ -100,7 +100,7 @@ class SubscriberService extends Component
         string $ipAddress,
         ?int $groupId = null,
         ?string $consentTextVersion = null,
-        ?int $userId = null
+        ?int $userId = null,
     ): bool {
         $settings = Plugin::getInstance()->getSettings();
         $groupId ??= $settings->defaultGroupId;
@@ -143,10 +143,10 @@ class SubscriberService extends Component
         $attributes = [];
 
         foreach ($settings->attributeMapping as $mapping) {
-            $craftField = $mapping['craftField'] ?? null;
-            $cleverReachAttribute = $mapping['cleverReachAttribute'] ?? null;
+            $craftField = $mapping['craftField'];
+            $cleverReachAttribute = $mapping['cleverReachAttribute'];
 
-            if ($craftField === null || $cleverReachAttribute === null || !array_key_exists($craftField, $formData)) {
+            if ($craftField === '' || $cleverReachAttribute === '' || !array_key_exists($craftField, $formData)) {
                 continue;
             }
 

@@ -4,9 +4,9 @@ namespace kernpfad\cleverreach\services;
 
 use Craft;
 use craft\base\Component;
-use kernpfad\cleverreach\Plugin;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
+use kernpfad\cleverreach\Plugin;
 use RuntimeException;
 
 /**
@@ -46,6 +46,7 @@ class CleverReachApiService extends Component
      * {@see \kernpfad\cleverreach\integrations\formie\CleverReachEmailMarketing}.
      *
      * @param array<string, mixed> $attributes
+     * @return array<string, mixed>
      */
     public function createReceiverForDoubleOptIn(int $groupId, string $email, array $attributes = []): array
     {
@@ -58,6 +59,7 @@ class CleverReachApiService extends Component
         ]);
     }
 
+    /** @return array<string, mixed> */
     public function sendDoubleOptInMail(int $doiFormId, string $email): array
     {
         return $this->request('POST', "forms/{$doiFormId}/send/activate", ['email' => $email]);
@@ -71,6 +73,7 @@ class CleverReachApiService extends Component
      * existing receiver back into pending-DOI state.
      *
      * @param array<string, mixed> $orderPayload
+     * @return array<string, mixed>
      */
     public function pushOrderToReceiver(int $groupId, string $email, array $orderPayload): array
     {
@@ -92,6 +95,7 @@ class CleverReachApiService extends Component
      * used by the generic subscribe endpoint or the Formie integration.
      *
      * @param array<string, mixed> $attributes
+     * @return array<string, mixed>
      */
     public function activateReceiver(int $groupId, string $email, array $attributes = []): array
     {
@@ -133,7 +137,7 @@ class CleverReachApiService extends Component
     }
 
     /**
-     * @param array<string, mixed> $body
+     * @param array<mixed> $body
      * @return array<string, mixed>
      */
     private function request(string $method, string $path, array $body = []): array
@@ -164,6 +168,10 @@ class CleverReachApiService extends Component
     private function getAccessToken(): string
     {
         $cache = Craft::$app->getCache();
+        if ($cache === null) {
+            throw new RuntimeException('Cache component is not available.');
+        }
+
         $cached = $cache->get(self::CACHE_KEY);
 
         if (is_string($cached) && $cached !== '') {

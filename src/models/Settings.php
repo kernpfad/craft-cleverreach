@@ -70,16 +70,16 @@ class Settings extends Model
 
     public function getOauthClientId(): string
     {
-        return App::parseEnv($this->oauthClientId) ?: '';
+        return (string)(App::parseEnv($this->oauthClientId) ?: '');
     }
 
     public function getOauthClientSecret(): string
     {
-        return App::parseEnv($this->oauthClientSecret) ?: '';
+        return (string)(App::parseEnv($this->oauthClientSecret) ?: '');
     }
 
     public function getCatalogPassword(): string
     {
-        return App::parseEnv($this->catalogPassword) ?: '';
+        return (string)(App::parseEnv($this->catalogPassword) ?: '');
     }
 }
