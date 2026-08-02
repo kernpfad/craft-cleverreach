@@ -37,6 +37,9 @@
         "documentationUrl": "https://github.com/kernpfad/cleverreach",
         "class": "fipschen95\\cleverreach\\Plugin",
         "changelogUrl": "https://raw.githubusercontent.com/kernpfad/cleverreach/main/CHANGELOG.md",
-        "developerUrl": "https://github.com/kernpfad"
+        "developerUrl": "https://kernpfad.dev",
+        "imprintUrl": "https://kernpfad.dev/impressum",
+        "privacyPolicyUrl": "https://kernpfad.dev/datenschutz",
+        "termsUrl": "https://kernpfad.dev/agb"
     }
 }
