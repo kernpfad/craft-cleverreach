@@ -19,7 +19,7 @@ class ConsentService extends Component
         string $source,
         ?string $consentTextVersion,
         ?int $groupId,
-        ?int $userId = null
+        ?int $userId = null,
     ): void {
         $record = new ConsentLogRecord();
         $record->email = $email;
@@ -53,9 +53,11 @@ class ConsentService extends Component
             $conditions[] = ['email' => $email];
         }
 
-        return ConsentLogRecord::find()
+        $record = ConsentLogRecord::find()
             ->where($conditions)
             ->orderBy(['dateCreated' => SORT_DESC])
             ->one();
+
+        return $record instanceof ConsentLogRecord ? $record : null;
     }
 }

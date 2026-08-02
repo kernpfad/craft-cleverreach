@@ -253,10 +253,14 @@ class ImportController extends Controller
             $contacts = [];
 
             while (($row = fgetcsv($handle)) !== false) {
-                $rowByColumn = $header !== null ? @array_combine($header, $row) : $row;
-
-                if ($rowByColumn === false) {
-                    continue;
+                if ($header !== null) {
+                    $normalizedHeader = array_map(static fn($column) => (string)($column ?? ''), $header);
+                    if (count($normalizedHeader) !== count($row)) {
+                        continue;
+                    }
+                    $rowByColumn = array_combine($normalizedHeader, $row);
+                } else {
+                    $rowByColumn = $row;
                 }
 
                 $email = null;

@@ -31,7 +31,20 @@ class CatalogService extends Component
     {
         $productTypeValues = [['text' => Craft::t('cleverreach', 'Alle'), 'value' => '']];
 
-        foreach (\craft\commerce\Plugin::getInstance()->getProductTypes()->getAllProductTypes() as $productType) {
+        $commerce = \craft\commerce\Plugin::getInstance();
+        if ($commerce === null) {
+            return [
+                [
+                    'name' => Craft::t('cleverreach', 'Suchbegriff'),
+                    'description' => Craft::t('cleverreach', 'Sucht im Produkttitel.'),
+                    'required' => false,
+                    'query_key' => 'q',
+                    'type' => 'input',
+                ],
+            ];
+        }
+
+        foreach ($commerce->getProductTypes()->getAllProductTypes() as $productType) {
             $productTypeValues[] = ['text' => $productType->name, 'value' => (string) $productType->id];
         }
 

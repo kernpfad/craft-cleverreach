@@ -61,6 +61,9 @@ class CleverReachEmailMarketing extends EmailMarketing
         return Craft::t('formie', 'Meldet Formular-Einsendungen per Double-Opt-in bei CleverReach an (eigener Consent-Nachweis, geteilte Zugangsdaten mit dem CleverReach-Plugin). Für sofortige Aktivierung ohne DOI die eingebaute CleverReach-Integration von Formie nutzen.');
     }
 
+    /**
+     * @return array<int, mixed>
+     */
     public function defineRules(): array
     {
         $rules = parent::defineRules();
@@ -155,7 +158,7 @@ class CleverReachEmailMarketing extends EmailMarketing
             Plugin::getInstance()->subscriber->subscribeWithAttributes(
                 (string) $email,
                 $fieldValues,
-                'formie:' . ($form?->handle ?? 'unknown'),
+                'formie:' . ($form !== null ? $form->handle : 'unknown'),
                 $submission->canGetProperty('ipAddress') ? (string) ($submission->ipAddress ?? '') : '',
                 $this->listId !== null ? (int) $this->listId : null,
                 $consentTextVersion !== null ? (string) $consentTextVersion : null
