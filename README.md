@@ -13,7 +13,7 @@ Umgesetzt gemäß [Feinkonzept](../docs/cleverreach/feinkonzept.md) — aktuell 
 ## Installation
 
 ```bash
-composer require kernpfad/cleverreach
+composer require kernpfad/craft-cleverreach
 php craft plugin/install cleverreach
 ```
 
