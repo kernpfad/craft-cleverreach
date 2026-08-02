@@ -3,6 +3,10 @@
     "description": "DSGVO-konforme CleverReach-Newsletter-Integration für Craft CMS: Double-Opt-in-Anmeldung, Attribut-Sync und optionaler Craft-Commerce-Order-Push.",
     "type": "craft-plugin",
     "license": "MIT",
+    "support": {
+        "docs": "https://github.com/kernpfad/cleverreach",
+        "issues": "https://github.com/kernpfad/cleverreach/issues"
+    },
     "keywords": [
         "craft",
         "cms",
@@ -30,7 +34,9 @@
         "handle": "cleverreach",
         "name": "CleverReach",
         "developer": "fipschen95",
-        "documentationUrl": "https://github.com/fipschen95/craftcms-plugins/blob/main/cleverreach/README.md",
-        "class": "fipschen95\\cleverreach\\Plugin"
+        "documentationUrl": "https://github.com/kernpfad/cleverreach",
+        "class": "fipschen95\\cleverreach\\Plugin",
+        "changelogUrl": "https://raw.githubusercontent.com/kernpfad/cleverreach/main/CHANGELOG.md",
+        "developerUrl": "https://github.com/kernpfad"
     }
 }
