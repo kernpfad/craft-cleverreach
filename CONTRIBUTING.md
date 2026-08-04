@@ -20,21 +20,17 @@ Individual scripts:
 | `composer phpstan` | Static analysis |
 | `composer rector` / `composer rector:fix` | Rector dry-run / apply |
 | `composer test:unit` | Unit tests (no Craft boot) |
-| `composer test:integration` | Integration tests (needs Craft + DB) |
 
-All of ECS, PHPStan and Rector must pass clean before a release. Pull requests
+All of ECS, PHPStan, Rector and unit tests must pass clean before a release. Pull requests
 should keep `composer check` green.
 
 ## Tests
 
 ```sh
 composer test:unit
-composer test:integration
 ```
 
-Unit tests run without booting Craft. Integration tests boot a real Craft
-application and exercise the plugin against real records, so they need a
-configured test database.
+Unit tests run without booting Craft and cover pure utility logic (e.g. CSV mapping parsing).
 
 ## Local development
 
@@ -50,7 +46,7 @@ Install the plugin into a Craft 5 site through a Composer path repository:
 
 ```sh
 composer require kernpfad/craft-cleverreach:@dev
-php craft plugin/install commerce-klaviyo
+php craft plugin/install cleverreach
 ```
 
 ## Pull requests

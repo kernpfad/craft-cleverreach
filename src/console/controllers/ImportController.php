@@ -1,10 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace kernpfad\cleverreach\console\controllers;
 
 use craft\console\Controller;
 use craft\elements\User;
 use kernpfad\cleverreach\Plugin;
+use kernpfad\cleverreach\util\CsvMappingParser;
 use RuntimeException;
 use Throwable;
 use yii\console\ExitCode;
@@ -98,7 +101,7 @@ class ImportController extends Controller
         }
 
         if (!class_exists(\craft\commerce\Plugin::class)) {
-            $this->stderr("Craft Commerce ist nicht installiert.\n");
+            $this->stderr("Craft Commerce is not installed.\n");
 
             return ExitCode::UNAVAILABLE;
         }
@@ -113,13 +116,13 @@ class ImportController extends Controller
         }
 
         if ($this->file === null || !is_readable($this->file)) {
-            $this->stderr("--file muss auf eine lesbare CSV-Datei zeigen.\n");
+            $this->stderr("--file must point to a readable CSV file.\n");
 
             return ExitCode::USAGE;
         }
 
         if ($this->mapping === null) {
-            $this->stderr("--mapping ist erforderlich, z. B. --mapping=\"E-Mail:email,Vorname:firstname\".\n");
+            $this->stderr("--mapping is required, e.g. --mapping=\"E-Mail:email,First name:firstname\".\n");
 
             return ExitCode::USAGE;
         }
@@ -127,7 +130,7 @@ class ImportController extends Controller
         try {
             $contacts = $this->collectCsv();
         } catch (Throwable $e) {
-            $this->stderr('Fehler beim Einlesen der CSV: ' . $e->getMessage() . "\n");
+            $this->stderr('Error reading CSV: ' . $e->getMessage() . "\n");
 
             return ExitCode::DATAERR;
         }
@@ -140,15 +143,15 @@ class ImportController extends Controller
         $valid = [self::CONSENT_MODE_REQUIRE_CONSENT, self::CONSENT_MODE_DOI, self::CONSENT_MODE_ACTIVATE];
 
         if (!in_array($this->consentMode, $valid, true)) {
-            $this->stderr('--consentMode muss einer von ' . implode('|', $valid) . " sein.\n");
+            $this->stderr('--consentMode must be one of ' . implode('|', $valid) . ".\n");
 
             return false;
         }
 
         if ($this->consentMode === self::CONSENT_MODE_ACTIVATE && !$this->acceptResponsibility) {
             $this->stderr(
-                "--consentMode=activate erfordert zusätzlich --acceptResponsibility=1, als bewusste Bestätigung,\n" .
-                "dass für diesen Import eine rechtliche Grundlage außerhalb des Plugins vorliegt (kein automatischer Nachweis).\n"
+                "--consentMode=activate additionally requires --acceptResponsibility=1 as a deliberate confirmation\n" .
+                "that a legal basis exists outside the plugin (no automatic verification).\n"
             );
 
             return false;
@@ -221,33 +224,19 @@ class ImportController extends Controller
      */
     private function collectCsv(): array
     {
-        $columnMap = [];
-
-        foreach (explode(',', (string) $this->mapping) as $pair) {
-            [$column, $target] = array_pad(explode(':', trim($pair), 2), 2, null);
-
-            if ($column === null || $target === null || trim($column) === '' || trim($target) === '') {
-                throw new RuntimeException("Ungültiger --mapping-Eintrag: \"{$pair}\"");
-            }
-
-            $columnMap[trim($column)] = trim($target);
-        }
-
-        if (!in_array('email', $columnMap, true)) {
-            throw new RuntimeException('--mapping muss eine Spalte auf "email" abbilden, z. B. "E-Mail:email".');
-        }
+        $columnMap = CsvMappingParser::parse((string) $this->mapping);
 
         $handle = fopen((string) $this->file, 'rb');
 
         if ($handle === false) {
-            throw new RuntimeException("Datei konnte nicht geöffnet werden: {$this->file}");
+            throw new RuntimeException("Could not open file: {$this->file}");
         }
 
         try {
             $header = $this->hasHeader ? fgetcsv($handle) : null;
 
             if ($this->hasHeader && $header === false) {
-                throw new RuntimeException('CSV-Datei ist leer.');
+                throw new RuntimeException('CSV file is empty.');
             }
 
             $contacts = [];
@@ -273,7 +262,7 @@ class ImportController extends Controller
                     if ($target === 'email') {
                         $email = $value !== null ? trim((string) $value) : null;
                     } elseif ($target === 'consent') {
-                        $hasExistingConsent = in_array(strtolower((string) $value), ['1', 'true', 'yes', 'ja'], true);
+                        $hasExistingConsent = CsvMappingParser::parseConsentValue($value);
                     } else {
                         $attributes[$target] = $value;
                     }
@@ -308,7 +297,7 @@ class ImportController extends Controller
         $failed = [];
 
         if ($dryRun) {
-            $this->stdout("Dry run (kein --confirm) — es wird nichts geschrieben, nur gezählt.\n");
+            $this->stdout("Dry run (no --confirm) — nothing will be written, counts only.\n");
         }
 
         foreach ($contacts as $contact) {
@@ -358,20 +347,20 @@ class ImportController extends Controller
         }
 
         $this->stdout(sprintf(
-            "%s: %d (%s), %d übersprungen (kein Consent), %d fehlgeschlagen.\n",
-            $dryRun ? 'Würde importieren' : 'Importiert',
+            "%s: %d (%s), %d skipped (no consent), %d failed.\n",
+            $dryRun ? 'Would import' : 'Imported',
             $imported,
-            $this->consentMode === self::CONSENT_MODE_DOI ? 'DOI-Mail ausgelöst' : 'direkt aktiviert',
+            $this->consentMode === self::CONSENT_MODE_DOI ? 'DOI mail triggered' : 'activated directly',
             $skipped,
             count($failed)
         ));
 
         foreach ($failed as $failedEmail => $message) {
-            $this->stderr("  Fehler bei {$failedEmail}: {$message}\n");
+            $this->stderr("  Error for {$failedEmail}: {$message}\n");
         }
 
         if ($dryRun && $imported > 0) {
-            $this->stdout("Zum tatsächlichen Ausführen erneut mit --confirm aufrufen.\n");
+            $this->stdout("Re-run with --confirm to execute.\n");
         }
 
         return $failed === [] ? ExitCode::OK : ExitCode::UNSPECIFIED_ERROR;

@@ -2,4 +2,5 @@
 /composer.lock
 .DS_Store
 /.phpstan-cache/
+/.phpunit-cache/
 /.phpunit.result.cache

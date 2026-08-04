@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace kernpfad\cleverreach\records;
 
 use craft\db\ActiveRecord;

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace kernpfad\cleverreach\services;
 
 use Craft;
@@ -50,13 +52,7 @@ class CleverReachApiService extends Component
      */
     public function createReceiverForDoubleOptIn(int $groupId, string $email, array $attributes = []): array
     {
-        return $this->request('POST', "groups/{$groupId}/receivers/upsert", [
-            [
-                'email' => $email,
-                'activated' => false,
-                'attributes' => $attributes,
-            ],
-        ]);
+        return $this->upsertReceiver($groupId, $email, false, ['attributes' => $attributes]);
     }
 
     /** @return array<string, mixed> */
@@ -77,13 +73,7 @@ class CleverReachApiService extends Component
      */
     public function pushOrderToReceiver(int $groupId, string $email, array $orderPayload): array
     {
-        return $this->request('POST', "groups/{$groupId}/receivers/upsert", [
-            [
-                'email' => $email,
-                'activated' => true,
-                'orders' => [$orderPayload],
-            ],
-        ]);
+        return $this->upsertReceiver($groupId, $email, true, ['orders' => [$orderPayload]]);
     }
 
     /**
@@ -99,13 +89,7 @@ class CleverReachApiService extends Component
      */
     public function activateReceiver(int $groupId, string $email, array $attributes = []): array
     {
-        return $this->request('POST', "groups/{$groupId}/receivers/upsert", [
-            [
-                'email' => $email,
-                'activated' => true,
-                'attributes' => $attributes,
-            ],
-        ]);
+        return $this->upsertReceiver($groupId, $email, true, ['attributes' => $attributes]);
     }
 
     /**
@@ -137,6 +121,23 @@ class CleverReachApiService extends Component
     }
 
     /**
+     * @param array<string, mixed> $extra
+     * @return array<string, mixed>
+     */
+    private function upsertReceiver(int $groupId, string $email, bool $activated, array $extra = []): array
+    {
+        return $this->request('POST', "groups/{$groupId}/receivers/upsert", [
+            array_merge(
+                [
+                    'email' => $email,
+                    'activated' => $activated,
+                ],
+                $extra
+            ),
+        ]);
+    }
+
+    /**
      * @param array<mixed> $body
      * @return array<string, mixed>
      */
@@ -160,9 +161,21 @@ class CleverReachApiService extends Component
             throw new RuntimeException('CleverReach API request failed: ' . $e->getMessage(), 0, $e);
         }
 
+        $statusCode = $response->getStatusCode();
+
+        if ($statusCode >= 400) {
+            $message = sprintf('CleverReach API returned HTTP %d for %s %s', $statusCode, $method, $path);
+            Craft::error($message, __METHOD__);
+            throw new RuntimeException($message);
+        }
+
         $decoded = json_decode((string) $response->getBody(), true);
 
-        return is_array($decoded) ? $decoded : [];
+        if (!is_array($decoded)) {
+            throw new RuntimeException(sprintf('CleverReach API returned invalid JSON for %s %s', $method, $path));
+        }
+
+        return $decoded;
     }
 
     private function getAccessToken(): string
@@ -209,6 +222,12 @@ class CleverReachApiService extends Component
         } catch (GuzzleException $e) {
             Craft::error('CleverReach OAuth token request failed: ' . $e->getMessage(), __METHOD__);
             throw new RuntimeException('CleverReach OAuth token request failed: ' . $e->getMessage(), 0, $e);
+        }
+
+        $statusCode = $response->getStatusCode();
+
+        if ($statusCode >= 400) {
+            throw new RuntimeException(sprintf('CleverReach OAuth token request returned HTTP %d', $statusCode));
         }
 
         $decoded = json_decode((string) $response->getBody(), true);

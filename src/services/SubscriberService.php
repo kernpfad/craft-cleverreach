@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace kernpfad\cleverreach\services;
 
 use Craft;
@@ -14,13 +16,7 @@ use kernpfad\cleverreach\Plugin;
 class SubscriberService extends Component
 {
     /**
-     * @param string $email
      * @param array<string, mixed> $formData Raw Craft field values, keyed by field handle
-     * @param string $source Free-text description of where the signup came from, e.g. "footer-newsletter-form"
-     * @param string $ipAddress
-     * @param int|null $groupId Overrides the configured default group, if given
-     * @param string|null $consentTextVersion Version identifier of the consent text shown to the user
-     * @param int|null $userId Craft User to link the consent record to; auto-resolved by email if omitted
      */
     public function subscribe(
         string $email,
@@ -59,29 +55,16 @@ class SubscriberService extends Component
         ?string $consentTextVersion = null,
         ?int $userId = null,
     ): bool {
-        $settings = Plugin::getInstance()->getSettings();
-        $groupId ??= $settings->defaultGroupId;
-
-        if ($groupId === null) {
-            return false;
-        }
-
-        Plugin::getInstance()->cleverReachApi->createReceiverForDoubleOptIn($groupId, $email, $attributes);
-
-        if ($settings->doiFormId !== null) {
-            Plugin::getInstance()->cleverReachApi->sendDoubleOptInMail($settings->doiFormId, $email);
-        }
-
-        Plugin::getInstance()->consent->logConsent(
+        return $this->processSubscription(
             $email,
-            $ipAddress,
+            $attributes,
             $source,
-            $consentTextVersion,
-            $groupId,
-            $userId ?? $this->resolveUserId($email)
+            $ipAddress,
+            activate: false,
+            groupId: $groupId,
+            consentTextVersion: $consentTextVersion,
+            userId: $userId,
         );
-
-        return true;
     }
 
     /**
@@ -102,6 +85,31 @@ class SubscriberService extends Component
         ?string $consentTextVersion = null,
         ?int $userId = null,
     ): bool {
+        return $this->processSubscription(
+            $email,
+            $attributes,
+            $source,
+            $ipAddress,
+            activate: true,
+            groupId: $groupId,
+            consentTextVersion: $consentTextVersion,
+            userId: $userId,
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $attributes
+     */
+    private function processSubscription(
+        string $email,
+        array $attributes,
+        string $source,
+        string $ipAddress,
+        bool $activate,
+        ?int $groupId = null,
+        ?string $consentTextVersion = null,
+        ?int $userId = null,
+    ): bool {
         $settings = Plugin::getInstance()->getSettings();
         $groupId ??= $settings->defaultGroupId;
 
@@ -109,7 +117,17 @@ class SubscriberService extends Component
             return false;
         }
 
-        Plugin::getInstance()->cleverReachApi->activateReceiver($groupId, $email, $attributes);
+        $api = Plugin::getInstance()->cleverReachApi;
+
+        if ($activate) {
+            $api->activateReceiver($groupId, $email, $attributes);
+        } else {
+            $api->createReceiverForDoubleOptIn($groupId, $email, $attributes);
+
+            if ($settings->doiFormId !== null) {
+                $api->sendDoubleOptInMail($settings->doiFormId, $email);
+            }
+        }
 
         Plugin::getInstance()->consent->logConsent(
             $email,

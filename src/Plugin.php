@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace kernpfad\cleverreach;
 
 use Craft;
@@ -139,7 +141,7 @@ class Plugin extends BasePlugin
 
                 $event->metadata[Craft::t('cleverreach', 'Newsletter (CleverReach)')] = Craft::t(
                     'cleverreach',
-                    'Angemeldet seit {date} ({source})',
+                    'Subscribed since {date} ({source})',
                     [
                         'date' => Craft::$app->getFormatter()->asDate($record->dateCreated),
                         'source' => $record->source,

@@ -62,3 +62,6 @@ jobs:
 
       - name: Rector (dry-run)
         run: composer rector
+
+      - name: Unit tests
+        run: composer test:unit

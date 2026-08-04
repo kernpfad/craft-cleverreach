@@ -1,11 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace kernpfad\cleverreach\services;
 
+use Craft;
 use craft\base\Component;
 use craft\commerce\elements\Order;
 use kernpfad\cleverreach\Plugin;
-use kernpfad\cleverreach\records\ConsentLogRecord;
+use Throwable;
 
 /**
  * Pushes a completed Craft Commerce order to CleverReach so
@@ -27,28 +30,31 @@ class CommerceOrderPushService extends Component
             return;
         }
 
-        // Never create a receiver purely because
-        // of an order — only push order data for people who already opted in.
-        if (!$this->hasExistingConsent($email)) {
+        $consentRecord = Plugin::getInstance()->consent->getLatestConsent(null, $email);
+
+        // Never create a receiver purely because of an order — only push order
+        // data for people who already opted in.
+        if ($consentRecord === null) {
             return;
         }
 
-        $settings = Plugin::getInstance()->getSettings();
+        $groupId = $consentRecord->groupId ?? Plugin::getInstance()->getSettings()->defaultGroupId;
 
-        if ($settings->defaultGroupId === null) {
+        if ($groupId === null) {
             return;
         }
 
-        Plugin::getInstance()->cleverReachApi->pushOrderToReceiver(
-            $settings->defaultGroupId,
-            $email,
-            $this->buildOrderPayload($order)
-        );
-    }
-
-    private function hasExistingConsent(string $email): bool
-    {
-        return ConsentLogRecord::find()->where(['email' => $email])->exists();
+        // Runs inside the order-complete flow — a CleverReach outage must never
+        // break order completion, so failures are logged, not thrown.
+        try {
+            Plugin::getInstance()->cleverReachApi->pushOrderToReceiver(
+                (int) $groupId,
+                $email,
+                $this->buildOrderPayload($order)
+            );
+        } catch (Throwable $e) {
+            Craft::error('CleverReach order push failed: ' . $e->getMessage(), __METHOD__);
+        }
     }
 
     /**

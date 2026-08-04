@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace kernpfad\cleverreach\services;
 
 use Craft;
@@ -29,41 +31,28 @@ class CatalogService extends Component
      */
     public function getFilters(): array
     {
-        $productTypeValues = [['text' => Craft::t('cleverreach', 'Alle'), 'value' => '']];
+        $filters = [$this->buildSearchTermFilter()];
 
         $commerce = \craft\commerce\Plugin::getInstance();
         if ($commerce === null) {
-            return [
-                [
-                    'name' => Craft::t('cleverreach', 'Suchbegriff'),
-                    'description' => Craft::t('cleverreach', 'Sucht im Produkttitel.'),
-                    'required' => false,
-                    'query_key' => 'q',
-                    'type' => 'input',
-                ],
-            ];
+            return $filters;
         }
+
+        $productTypeValues = [['text' => Craft::t('cleverreach', 'All'), 'value' => '']];
 
         foreach ($commerce->getProductTypes()->getAllProductTypes() as $productType) {
             $productTypeValues[] = ['text' => $productType->name, 'value' => (string) $productType->id];
         }
 
-        return [
-            [
-                'name' => Craft::t('cleverreach', 'Suchbegriff'),
-                'description' => Craft::t('cleverreach', 'Sucht im Produkttitel.'),
-                'required' => false,
-                'query_key' => 'q',
-                'type' => 'input',
-            ],
-            [
-                'name' => Craft::t('cleverreach', 'Produkttyp'),
-                'required' => false,
-                'query_key' => 'productTypeId',
-                'type' => 'dropdown',
-                'values' => $productTypeValues,
-            ],
+        $filters[] = [
+            'name' => Craft::t('cleverreach', 'Product type'),
+            'required' => false,
+            'query_key' => 'productTypeId',
+            'type' => 'dropdown',
+            'values' => $productTypeValues,
         ];
+
+        return $filters;
     }
 
     /**
@@ -96,6 +85,20 @@ class CatalogService extends Component
                 'image_size_editable' => true,
             ],
             'items' => $items,
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildSearchTermFilter(): array
+    {
+        return [
+            'name' => Craft::t('cleverreach', 'Search term'),
+            'description' => Craft::t('cleverreach', 'Searches the product title.'),
+            'required' => false,
+            'query_key' => 'q',
+            'type' => 'input',
         ];
     }
 

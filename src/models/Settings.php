@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace kernpfad\cleverreach\models;
 
+use Craft;
 use craft\base\Model;
 use craft\helpers\App;
 
@@ -65,7 +68,22 @@ class Settings extends Model
             [['attributeMapping'], 'safe'],
             [['enableOrderPush', 'enableCatalog'], 'boolean'],
             [['catalogImageFieldHandle', 'catalogImageTransformHandle', 'catalogDescriptionFieldHandle'], 'string'],
+            [['doiFormId'], 'validateDoiFormId'],
         ];
+    }
+
+    /**
+     * A default group without a DOI form would create inactive receivers that
+     * never receive a confirmation mail — catch that at save time.
+     */
+    public function validateDoiFormId(string $attribute): void
+    {
+        if ($this->defaultGroupId !== null && $this->doiFormId === null) {
+            $this->addError(
+                $attribute,
+                Craft::t('cleverreach', 'A double opt-in form ID is required when a default group is configured.')
+            );
+        }
     }
 
     public function getOauthClientId(): string

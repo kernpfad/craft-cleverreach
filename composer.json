@@ -33,6 +33,11 @@
             "kernpfad\\cleverreach\\": "src/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "kernpfad\\cleverreach\\tests\\": "tests/"
+        }
+    },
     "extra": {
         "handle": "cleverreach",
         "name": "CleverReach",
@@ -64,6 +69,7 @@
         "craftcms/ecs": "dev-main",
         "craftcms/rector": "dev-craft6",
         "phpstan/phpstan": "^2.2",
+        "phpunit/phpunit": "^11.0",
         "verbb/formie": "^3.0"
     },
     "scripts": {
@@ -72,10 +78,12 @@
         "phpstan": "phpstan analyse --memory-limit=1G --ansi",
         "rector": "rector process --dry-run --ansi",
         "rector:fix": "rector process --ansi",
+        "test:unit": "phpunit --colors=always",
         "check": [
             "@check-cs",
             "@phpstan",
-            "@rector"
+            "@rector",
+            "@test:unit"
         ]
     },
     "minimum-stability": "dev",

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace kernpfad\cleverreach\controllers;
 
 use Craft;
@@ -68,7 +70,7 @@ class CatalogController extends Controller
 
         $providedPassword = Craft::$app->getRequest()->getQueryParam('password');
 
-        if ($providedPassword !== $configuredPassword) {
+        if (!hash_equals($configuredPassword, (string) $providedPassword)) {
             throw new NotFoundHttpException();
         }
     }

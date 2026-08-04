@@ -1,9 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace kernpfad\cleverreach\services;
 
+use Craft;
 use craft\base\Component;
 use kernpfad\cleverreach\records\ConsentLogRecord;
+use RuntimeException;
 
 /**
  * Records an independent double-opt-in consent proof on the Craft side
@@ -28,7 +32,12 @@ class ConsentService extends Component
         $record->source = $source;
         $record->consentTextVersion = $consentTextVersion;
         $record->groupId = $groupId;
-        $record->save();
+
+        if (!$record->save()) {
+            $errors = implode(', ', $record->getFirstErrors());
+            Craft::error('Failed to save consent log record: ' . $errors, __METHOD__);
+            throw new RuntimeException('Failed to save consent log record: ' . $errors);
+        }
     }
 
     /**
