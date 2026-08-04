@@ -70,7 +70,8 @@
         "craftcms/rector": "dev-craft6",
         "phpstan/phpstan": "^2.2",
         "phpunit/phpunit": "^11.0",
-        "verbb/formie": "^3.0"
+        "verbb/formie": "^3.0",
+        "phpstan/phpstan-phpunit": "^2.0"
     },
     "scripts": {
         "check-cs": "ecs check --ansi",
