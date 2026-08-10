@@ -1,5 +1,14 @@
 {% import "_includes/forms" as forms %}
 
+{% if lastError %}
+    <div class="pane error" style="margin-bottom: 1rem;">
+        <p>
+            <strong>{{ "Last API error"|t('cleverreach') }}</strong>
+            ({{ lastError.at|date('Y-m-d H:i') }}): {{ lastError.message }}
+        </p>
+    </div>
+{% endif %}
+
 <h2>{{ "OAuth-Zugangsdaten"|t('cleverreach') }}</h2>
 <p class="light">{{ "Unter CleverReach: Account → Extras → REST API eine OAuth-App anlegen (Client Credentials Grant genügt). Client-ID/-Secret als Umgebungsvariablen hinterlegen, hier nur den Variablennamen eintragen."|t('cleverreach') }}</p>
 
@@ -20,6 +29,43 @@
     value: settings.oauthClientSecret,
     errors: settings.getErrors('oauthClientSecret'),
 }) }}
+
+<div id="cleverreach-test" class="field">
+    <button type="button" class="btn" id="cleverreach-test-run">{{ "Test connection"|t('cleverreach') }}</button>
+    <span id="cleverreach-test-result" class="hidden" style="margin-left: 1rem;"></span>
+</div>
+
+{% js %}
+(function () {
+    const btn = document.getElementById('cleverreach-test-run');
+    const result = document.getElementById('cleverreach-test-result');
+    if (!btn || !result) return;
+
+    btn.addEventListener('click', async () => {
+        btn.setAttribute('disabled', 'disabled');
+        result.classList.add('hidden');
+
+        const body = new FormData();
+        body.append(Craft.csrfTokenName, Craft.csrfTokenValue);
+
+        try {
+            const response = await fetch('{{ actionUrl('cleverreach/cp/test/run') }}', {
+                method: 'POST',
+                headers: { 'Accept': 'application/json' },
+                body,
+            });
+            const data = await response.json();
+            result.textContent = data.message;
+            result.className = data.success ? 'success' : 'error';
+        } catch (error) {
+            result.textContent = String(error);
+            result.className = 'error';
+        } finally {
+            btn.removeAttribute('disabled');
+        }
+    });
+})();
+{% endjs %}
 
 <hr>
 

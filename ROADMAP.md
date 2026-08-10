@@ -16,11 +16,11 @@
 
 ### P0
 
-| ID | Klasse | Item |
-|---|---|---|
-| CR-01 | D | Client ID/Secret via Env-Aliase |
-| CR-02 | D | Connection-Test (Token holen + Account/Gruppen lesen) |
-| CR-03 | D | Token-Fehler im CP sichtbar (nicht nur Log) |
+| ID | Klasse | Item | Status |
+|---|---|---|---|
+| CR-01 | D | Client ID/Secret via Env-Aliase | ✅ war bereits umgesetzt (`Settings::getOauthClientId()`/`getOauthClientSecret()` via `App::parseEnv()`) |
+| CR-02 | D | Connection-Test (Token holen + Account/Gruppen lesen) | ✅ erledigt — `php craft cleverreach/test` + CP-Button (`CleverReachApiService::testConnection()`, ruft `getGroups()`) |
+| CR-03 | D | Token-Fehler im CP sichtbar (nicht nur Log) | ✅ erledigt — letzter Fehler (Message + Timestamp) im Cache, Anzeige oben auf der Settings-Seite |
 
 ### P1
 

@@ -5,6 +5,8 @@
 ### Added
 - Translation files for English and German (`src/translations/`).
 - Unit test infrastructure with PHPUnit and `CsvMappingParser` tests.
+- (CR-02) Connection test: a **Test connection** button on the settings screen and `php craft cleverreach/test` — both make a single lightweight, read-only API call to verify the configured OAuth credentials actually work, with no side effects on the CleverReach account.
+- (CR-03) API/token errors are now recorded (message + timestamp, secrets already excluded) and shown on the settings screen, not just in the Craft log — a site visitor's failed subscribe attempt is the most likely time this fires, and an admin previously had no way to see it without log access.
 
 ### Changed
 - Order push now uses the consent record's group ID and catches API errors without breaking order completion.

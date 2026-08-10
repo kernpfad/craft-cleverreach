@@ -50,6 +50,18 @@ There is no OAuth browser handshake. The client credentials grant authenticates 
 
 Credentials are stored as env var references, so the secrets themselves never reach `project.yaml` or version control.
 
+### Testing the connection
+
+```sh
+php craft cleverreach/test
+```
+
+Or click **Test connection** on the settings screen. Both make a single lightweight, read-only API call to verify the configured OAuth credentials work, with no side effects on the CleverReach account.
+
+### API errors
+
+If a request to CleverReach fails — an expired/invalid token, a network error, an unexpected response — the settings screen shows the most recent error (message and timestamp) at the top, in addition to the existing `Craft::error()` log entry. This is how you find out a site visitor's subscribe attempt failed without digging through logs.
+
 ## Newsletter signup
 
 Any form can POST to the signup endpoint:

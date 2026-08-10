@@ -26,12 +26,69 @@ class CleverReachApiService extends Component
     private const TOKEN_URL = 'https://rest.cleverreach.com/oauth/token.php';
     private const API_BASE_URL = 'https://rest.cleverreach.com/v3/';
     private const CACHE_KEY = 'cleverreach_access_token';
+    private const LAST_ERROR_CACHE_KEY = 'cleverreach_last_error';
+    private const LAST_ERROR_TTL = 60 * 60 * 24 * 30;
 
     private ?Client $httpClient = null;
 
     public function getHttpClient(): Client
     {
         return $this->httpClient ??= new Client(['base_uri' => self::API_BASE_URL]);
+    }
+
+    /**
+     * A single lightweight, read-only call (the same one the Formie
+     * integration's list picker already relies on) used to verify the
+     * configured OAuth credentials actually work, without side effects on
+     * the CleverReach account. Clears any previously recorded error on
+     * success, so the settings screen reflects current reality rather
+     * than a stale failure from before the credentials were fixed.
+     *
+     * @return array{success: bool, message: string}
+     */
+    public function testConnection(): array
+    {
+        try {
+            $this->getGroups();
+        } catch (\Throwable $e) {
+            return ['success' => false, 'message' => $e->getMessage()];
+        }
+
+        $this->clearLastError();
+
+        return ['success' => true, 'message' => Craft::t('cleverreach', 'Connection successful.')];
+    }
+
+    /**
+     * @return array{message: string, at: int}|null
+     */
+    public function getLastError(): ?array
+    {
+        $cache = Craft::$app->getCache();
+        $stored = $cache?->get(self::LAST_ERROR_CACHE_KEY);
+
+        return is_array($stored) && isset($stored['message'], $stored['at']) ? $stored : null;
+    }
+
+    public function clearLastError(): void
+    {
+        Craft::$app->getCache()?->delete(self::LAST_ERROR_CACHE_KEY);
+    }
+
+    /**
+     * Records a sanitized (already secret-free — see request()/
+     * requestAccessToken(), neither ever puts the client secret or access
+     * token into an exception message) error for CP display, in addition
+     * to the existing Craft::error() log entry. A site visitor's failed
+     * subscribe attempt is the most likely time this fires, so an admin
+     * needs a way to see it without log access.
+     */
+    private function recordError(string $message): void
+    {
+        Craft::$app->getCache()?->set(self::LAST_ERROR_CACHE_KEY, [
+            'message' => $message,
+            'at' => time(),
+        ], self::LAST_ERROR_TTL);
     }
 
     /**
@@ -144,6 +201,20 @@ class CleverReachApiService extends Component
     private function request(string $method, string $path, array $body = []): array
     {
         try {
+            return $this->doRequest($method, $path, $body);
+        } catch (RuntimeException $e) {
+            $this->recordError($e->getMessage());
+            throw $e;
+        }
+    }
+
+    /**
+     * @param array<mixed> $body
+     * @return array<string, mixed>
+     */
+    private function doRequest(string $method, string $path, array $body = []): array
+    {
+        try {
             $options = [
                 'headers' => [
                     'Authorization' => 'Bearer ' . $this->getAccessToken(),
@@ -203,6 +274,19 @@ class CleverReachApiService extends Component
      * @return array{access_token: string, expires_in: int}
      */
     private function requestAccessToken(): array
+    {
+        try {
+            return $this->doRequestAccessToken();
+        } catch (RuntimeException $e) {
+            $this->recordError($e->getMessage());
+            throw $e;
+        }
+    }
+
+    /**
+     * @return array{access_token: string, expires_in: int}
+     */
+    private function doRequestAccessToken(): array
     {
         $settings = Plugin::getInstance()->getSettings();
         $clientId = $settings->getOauthClientId();

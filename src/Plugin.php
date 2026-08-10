@@ -91,6 +91,7 @@ class Plugin extends BasePlugin
     {
         return Craft::$app->getView()->renderTemplate('cleverreach/settings', [
             'settings' => $this->getSettings(),
+            'lastError' => $this->cleverReachApi->getLastError(),
         ]);
     }
 
