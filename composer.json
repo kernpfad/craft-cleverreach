@@ -74,6 +74,9 @@
         "phpstan/phpstan-phpunit": "^2.0"
     },
     "scripts": {
+        "hooks:install": "git config core.hooksPath .githooks",
+        "post-install-cmd": "@hooks:install",
+        "post-update-cmd": "@hooks:install",
         "check-cs": "ecs check --ansi",
         "fix-cs": "ecs check --ansi --fix",
         "phpstan": "phpstan analyse --memory-limit=1G --ansi",
