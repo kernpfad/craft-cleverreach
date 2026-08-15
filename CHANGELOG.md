@@ -8,6 +8,9 @@
 - (CR-02) Connection test: a **Test connection** button on the settings screen and `php craft cleverreach/test` — both make a single lightweight, read-only API call to verify the configured OAuth credentials actually work, with no side effects on the CleverReach account.
 - (CR-03) API/token errors are now recorded (message + timestamp, secrets already excluded) and shown on the settings screen, not just in the Craft log — a site visitor's failed subscribe attempt is the most likely time this fires, and an admin previously had no way to see it without log access.
 
+### Fixed
+- The **Test connection** button on the settings screen did nothing when clicked. `Plugin::settingsHtml()` is always rendered through Craft core's `view->namespaceInputs(..., 'settings')`, which rewrites every `id`/`name`/`for` in the output to `settings-<original>` — the button's actual DOM id became `settings-cleverreach-test-run`, but its inline `<script>` still called `document.getElementById('cleverreach-test-run')` with the literal, unnamespaced string. The lookup returned null, the `if (!btn || !result) return;` guard fired, and the click handler was never attached — no request, no error, no visible failure. Fixed by running the same ids through Craft's `|namespaceInputId` filter in both the HTML and the JS, so they always match regardless of which namespace context the template renders in. Found and confirmed live (the button is now on a real, authenticated CP settings page for the first time) while capturing documentation screenshots.
+
 ### Changed
 - Order push now uses the consent record's group ID and catches API errors without breaking order completion.
 - Consent log writes are validated; failed saves throw and are logged.

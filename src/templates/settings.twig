@@ -37,8 +37,15 @@
 
 {% js %}
 (function () {
-    const btn = document.getElementById('cleverreach-test-run');
-    const result = document.getElementById('cleverreach-test-result');
+    // This template is always rendered through craft\base\Plugin::settingsHtml(),
+    // which Craft core wraps in view.namespaceInputs(..., 'settings') --
+    // every id/name/for in the HTML above becomes "settings-<original>".
+    // getElementById() with the literal, unnamespaced string below would
+    // silently find nothing and this handler would never attach; run the
+    // same ids output above through |namespaceInputId so the JS always
+    // matches whatever the HTML actually got rewritten to.
+    const btn = document.getElementById({{ 'cleverreach-test-run'|namespaceInputId|json_encode|raw }});
+    const result = document.getElementById({{ 'cleverreach-test-result'|namespaceInputId|json_encode|raw }});
     if (!btn || !result) return;
 
     btn.addEventListener('click', async () => {
