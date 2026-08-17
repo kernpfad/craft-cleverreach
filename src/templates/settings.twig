@@ -183,6 +183,20 @@
 
 <hr>
 
+<h2>{{ "Unsubscribe-Webhook"|t('cleverreach') }}</h2>
+<p class="light">{{ "Empfängt Abmelde-/Bounce-Benachrichtigungen von außerhalb (z. B. einer CleverReach-Automation oder einem eigenen Skript) unter actions/cleverreach/webhook/unsubscribe. Leer lassen deaktiviert den Endpunkt vollständig (404) — ein ungeschützter Endpunkt, der echte Abonnenten als abgemeldet markieren kann, ist ein schlechterer Default als ein deaktivierter."|t('cleverreach') }}</p>
+
+{{ forms.textField({
+    label: "Webhook-Secret"|t('cleverreach'),
+    instructions: "Name der Umgebungsvariable, z. B. $CLEVERREACH_WEBHOOK_SECRET. Wird als ?secret=... an die URL angehängt erwartet."|t('cleverreach'),
+    id: 'webhookSecret',
+    name: 'webhookSecret',
+    value: settings.webhookSecret,
+    errors: settings.getErrors('webhookSecret'),
+}) }}
+
+<hr>
+
 <h2>{{ "Attribut-Mapping"|t('cleverreach') }}</h2>
 
 {{ forms.editableTableField({
