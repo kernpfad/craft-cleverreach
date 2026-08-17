@@ -8,6 +8,7 @@ use Craft;
 use craft\base\Component;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
+use kernpfad\cleverreach\events\ModifyReceiverPayloadEvent;
 use kernpfad\cleverreach\Plugin;
 use RuntimeException;
 
@@ -164,6 +165,32 @@ class CleverReachApiService extends Component
     }
 
     /**
+     * A single receiver's current state in a group — most importantly
+     * whether they've actually completed double opt-in (`activated`), not
+     * just whether this plugin created them as pending (CR-06). Returns
+     * null both when the receiver genuinely doesn't exist yet and when the
+     * lookup itself fails (network error, bad credentials) - callers that
+     * need to tell those apart should call {@see getGroups()} or
+     * {@see testConnection()} separately to check connectivity first.
+     *
+     * Endpoint shape follows the same `groups/{id}/receivers/...` REST
+     * convention already verified for {@see upsertReceiver()} against
+     * Formie's bundled CleverReach integration.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function getReceiver(int $groupId, string $email): ?array
+    {
+        try {
+            $result = $this->request('GET', "groups/{$groupId}/receivers/" . rawurlencode($email));
+        } catch (\Throwable $e) {
+            return null;
+        }
+
+        return $result === [] ? null : $result;
+    }
+
+    /**
      * Account-wide receiver attributes (not per-group — CleverReach's
      * `attributes` endpoint is global). Used the same way as
      * {@see getGroups()}, to build the Formie field-mapping UI.
@@ -183,15 +210,23 @@ class CleverReachApiService extends Component
      */
     private function upsertReceiver(int $groupId, string $email, bool $activated, array $extra = []): array
     {
-        return $this->request('POST', "groups/{$groupId}/receivers/upsert", [
-            array_merge(
-                [
-                    'email' => $email,
-                    'activated' => $activated,
-                ],
-                $extra
-            ),
-        ]);
+        $payload = array_merge(
+            [
+                'email' => $email,
+                'activated' => $activated,
+            ],
+            $extra
+        );
+
+        $plugin = Plugin::getInstance();
+
+        if ($plugin->hasEventHandlers(Plugin::EVENT_MODIFY_RECEIVER_PAYLOAD)) {
+            $event = new ModifyReceiverPayloadEvent($groupId, $email, $activated, $payload);
+            $plugin->trigger(Plugin::EVENT_MODIFY_RECEIVER_PAYLOAD, $event);
+            $payload = $event->payload;
+        }
+
+        return $this->request('POST', "groups/{$groupId}/receivers/upsert", [$payload]);
     }
 
     /**

@@ -14,6 +14,11 @@ use craft\db\ActiveRecord;
  * @property string $source
  * @property string|null $consentTextVersion
  * @property int|null $groupId
+ * @property string|null $lastSyncStatus 'ok' or 'error' (CR-05)
+ * @property string|null $lastSyncAt
+ * @property string|null $lastSyncError
+ * @property string|null $doiConfirmedAt Cached from the last time the receiver's CleverReach activation status was checked (CR-06)
+ * @property string|null $unsubscribedAt Set when an unsubscribe/bounce notification is received for this email (CR-07)
  */
 class ConsentLogRecord extends ActiveRecord
 {

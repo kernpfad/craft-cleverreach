@@ -60,10 +60,18 @@ class Settings extends Model
     /** @var string|null Plain-text/Table field handle on the Commerce Product used as the item description */
     public ?string $catalogDescriptionFieldHandle = null;
 
+    /**
+     * @var string Env var reference for the shared secret the unsubscribe/bounce
+     * webhook endpoint (CR-07) requires, e.g. "$CLEVERREACH_WEBHOOK_SECRET".
+     * Empty disables the endpoint entirely (returns 404) rather than accepting
+     * unauthenticated requests.
+     */
+    public string $webhookSecret = '';
+
     public function rules(): array
     {
         return [
-            [['oauthClientId', 'oauthClientSecret', 'catalogPassword'], 'string'],
+            [['oauthClientId', 'oauthClientSecret', 'catalogPassword', 'webhookSecret'], 'string'],
             [['defaultGroupId', 'doiFormId'], 'integer'],
             [['attributeMapping'], 'safe'],
             [['enableOrderPush', 'enableCatalog'], 'boolean'],
@@ -99,5 +107,10 @@ class Settings extends Model
     public function getCatalogPassword(): string
     {
         return (string)(App::parseEnv($this->catalogPassword) ?: '');
+    }
+
+    public function getWebhookSecret(): string
+    {
+        return (string)(App::parseEnv($this->webhookSecret) ?: '');
     }
 }
