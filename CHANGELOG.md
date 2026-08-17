@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.1.0 - Unreleased
+
+### Added
+- (CR-04) Group picker on the settings screen: the "Default target group" field is now a `<select>` populated live from the connected CleverReach account (`GET /groups`, via a new CP endpoint `cleverreach/cp/groups/index`), with a refresh button — no more looking up and typing a numeric group ID by hand.
+- (CR-05) Last sync status shown on the User edit page's "Newsletter (CleverReach)" metadata panel: `Last sync (CleverReach): OK <date>` or `Error <date>: <message>`, sourced from new `lastSyncStatus` / `lastSyncAt` / `lastSyncError` columns on `cleverreach_consentlog`.
+- (CR-06) `UserSyncService` now checks the receiver's actual CleverReach-side confirmation state (via a new `CleverReachApiService::getReceiver()`) before syncing a user: a receiver that's still pending double opt-in is never force-activated by a user save. Once CleverReach reports the receiver as confirmed, the confirmation timestamp is cached in a new `doiConfirmedAt` column and shown on the User edit page as `Confirmation status: Confirmed <date>` / `Pending confirmation`.
+- (CR-07) Inbound unsubscribe/bounce endpoint at `actions/cleverreach/webhook/unsubscribe`, gated by a shared secret (`webhookSecret` setting, env-var capable, disabled/404 when unset). Marks the matching consent record's new `unsubscribedAt` column and fires `Plugin::EVENT_RECEIVER_UNSUBSCRIBED`. Both `UserSyncService` and `CommerceOrderPushService` now skip unsubscribed addresses entirely, and the User edit page shows `Newsletter status: Unsubscribed <date>` in place of the confirmation/sync details once set.
+- (CR-08) New `Plugin::EVENT_MODIFY_RECEIVER_PAYLOAD` event, fired immediately before every receiver upsert (subscribe, activate, order push) with the group ID, email, activation flag, and the full outgoing payload — lets other code add or override attributes without touching this plugin's core.
+- Migration `m260817_000000_add_sync_doi_unsubscribe_columns` adds the five new `cleverreach_consentlog` columns for existing installs (`Install.php` only runs on brand-new installs).
+
+### Roadmap
+- CR-09 (optional Authorization-Code OAuth flow) intentionally not implemented — the roadmap itself frames it as conditional ("only if merchants need it"), Client Credentials remains the default, and no concrete need for a browser-based authorize flow has come up. P0–P2 are otherwise complete; see ROADMAP.md.
+
 ## 1.0.0 - Unreleased
 
 ### Added

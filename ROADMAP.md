@@ -24,19 +24,19 @@
 
 ### P1
 
-| ID | Klasse | Item |
-|---|---|---|
-| CR-04 | B | Listen/Gruppen-Picker statt manueller IDs |
-| CR-05 | D | Letzter Sync-Status am User („CleverReach: ok / Fehler …“) |
-| CR-06 | D | Double-Opt-In-Status anzeigen / respektieren |
+| ID | Klasse | Item | Status |
+|---|---|---|---|
+| CR-04 | B | Listen/Gruppen-Picker statt manueller IDs | ✅ erledigt — `<select>` auf der Settings-Seite, live befüllt via `GroupsController::actionIndex()` (`GET /groups`), Refresh-Button |
+| CR-05 | D | Letzter Sync-Status am User („CleverReach: ok / Fehler …“) | ✅ erledigt — `lastSyncStatus`/`lastSyncAt`/`lastSyncError` auf `cleverreach_consentlog`, angezeigt im User-Metadata-Panel |
+| CR-06 | D | Double-Opt-In-Status anzeigen / respektieren | ✅ erledigt — `UserSyncService` prüft echten CleverReach-Bestätigungsstatus via `getReceiver()`, aktiviert pending Receiver nicht zwangsweise; `doiConfirmedAt` gecacht und angezeigt |
 
 ### P2
 
-| ID | Klasse | Item |
-|---|---|---|
-| CR-07 | D | Inbound: Unsubscribe-Webhook / Bounce-Handling |
-| CR-08 | D | Payload-Mutator Events |
-| CR-09 | A | Optional Authorization-Code-Flow nur wenn Merchants es brauchen — Client Credentials Default lassen |
+| ID | Klasse | Item | Status |
+|---|---|---|---|
+| CR-07 | D | Inbound: Unsubscribe-Webhook / Bounce-Handling | ✅ erledigt — `actions/cleverreach/webhook/unsubscribe`, Secret-gated, setzt `unsubscribedAt`, feuert `EVENT_RECEIVER_UNSUBSCRIBED`; `UserSyncService`/`CommerceOrderPushService` überspringen unsubscribed Adressen |
+| CR-08 | D | Payload-Mutator Events | ✅ erledigt — `Plugin::EVENT_MODIFY_RECEIVER_PAYLOAD`, feuert vor jedem Receiver-Upsert |
+| CR-09 | A | Optional Authorization-Code-Flow nur wenn Merchants es brauchen — Client Credentials Default lassen | ⏭️ bewusst nicht umgesetzt — die Formulierung selbst ist konditional ("nur wenn Merchants es brauchen"); kein konkreter Bedarf für einen Browser-Authorize-Flow ist aufgetaucht, Client Credentials bleibt Default |
 
 ### Nicht tun
 
@@ -46,6 +46,8 @@
 ---
 
 ## Agent-Prompt (kopieren)
+
+P0–P2 sind komplett erledigt (CR-01 bis CR-08); CR-09 bewusst nicht umgesetzt, siehe oben. Roadmap ist abgeschlossen — das folgende Prompt dokumentiert nur noch den ursprünglichen P0-Auftrag.
 
 ```markdown
 Du arbeitest im Repo `kernpfad/craft-cleverreach` (Craft 5 Plugin).

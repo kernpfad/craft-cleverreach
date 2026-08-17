@@ -78,14 +78,98 @@
 
 <h2>{{ "Listen & Formulare"|t('cleverreach') }}</h2>
 
-{{ forms.textField({
-    label: "Standard-Zielgruppe (Group-ID)"|t('cleverreach'),
-    id: 'defaultGroupId',
-    name: 'defaultGroupId',
-    value: settings.defaultGroupId,
-    size: 8,
-    errors: settings.getErrors('defaultGroupId'),
-}) }}
+{# CR-04: a picker fetched live from the connected account, instead of a
+   raw numeric ID typed by hand. #}
+<div class="field" id="cleverreach-groups-field">
+    <div class="heading">
+        <label for="defaultGroupId">{{ "Standard-Zielgruppe"|t('cleverreach') }}</label>
+    </div>
+    <div class="input ltr">
+        <div class="flex">
+            <select id="defaultGroupId" name="defaultGroupId" class="flex-grow">
+                {% if settings.defaultGroupId %}
+                    <option value="{{ settings.defaultGroupId }}" selected>{{ settings.defaultGroupId }}</option>
+                {% else %}
+                    <option value="">{{ "Keine ausgewählt"|t('cleverreach') }}</option>
+                {% endif %}
+            </select>
+            <button type="button" class="btn" id="cleverreach-groups-refresh">{{ "Gruppen laden"|t('cleverreach') }}</button>
+        </div>
+    </div>
+    <div class="instructions">
+        <p>{{ "Gruppen werden mit dem konfigurierten Zugang live aus deinem CleverReach-Account geladen."|t('cleverreach') }}</p>
+    </div>
+    <span id="cleverreach-groups-result" class="hidden"></span>
+    {% if settings.getErrors('defaultGroupId') %}
+        <ul class="errors">
+            {% for error in settings.getErrors('defaultGroupId') %}
+                <li>{{ error }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+</div>
+
+{% js %}
+(function () {
+    const select = document.getElementById({{ 'defaultGroupId'|namespaceInputId|json_encode|raw }});
+    const refreshBtn = document.getElementById({{ 'cleverreach-groups-refresh'|namespaceInputId|json_encode|raw }});
+    const result = document.getElementById({{ 'cleverreach-groups-result'|namespaceInputId|json_encode|raw }});
+    if (!select || !refreshBtn) return;
+
+    const selectedId = {{ settings.defaultGroupId|json_encode|raw }};
+
+    async function loadGroups() {
+        refreshBtn.setAttribute('disabled', 'disabled');
+        result.classList.add('hidden');
+
+        const body = new FormData();
+        body.append(Craft.csrfTokenName, Craft.csrfTokenValue);
+
+        try {
+            const response = await fetch('{{ actionUrl('cleverreach/cp/groups/index') }}', {
+                method: 'POST',
+                headers: { 'Accept': 'application/json' },
+                body,
+            });
+            const data = await response.json();
+
+            if (!data.success) {
+                result.textContent = data.message || 'Could not load groups.';
+                result.className = 'error';
+                return;
+            }
+
+            const current = select.value;
+            select.innerHTML = '';
+
+            const placeholder = document.createElement('option');
+            placeholder.value = '';
+            placeholder.textContent = '{{ "Keine ausgewählt"|t('cleverreach')|e('js') }}';
+            select.appendChild(placeholder);
+
+            for (const group of data.groups || []) {
+                const option = document.createElement('option');
+                option.value = group.id;
+                option.textContent = `${group.name} (#${group.id})`;
+                if (group.id === selectedId || group.id === current) {
+                    option.selected = true;
+                }
+                select.appendChild(option);
+            }
+
+            result.textContent = '{{ "Gruppen geladen."|t('cleverreach') }}';
+            result.className = 'success';
+        } catch (error) {
+            result.textContent = String(error);
+            result.className = 'error';
+        } finally {
+            refreshBtn.removeAttribute('disabled');
+        }
+    }
+
+    refreshBtn.addEventListener('click', loadGroups);
+})();
+{% endjs %}
 
 {{ forms.textField({
     label: "Double-Opt-in Formular-ID"|t('cleverreach'),
@@ -95,6 +179,20 @@
     value: settings.doiFormId,
     size: 8,
     errors: settings.getErrors('doiFormId'),
+}) }}
+
+<hr>
+
+<h2>{{ "Unsubscribe-Webhook"|t('cleverreach') }}</h2>
+<p class="light">{{ "Empfängt Abmelde-/Bounce-Benachrichtigungen von außerhalb (z. B. einer CleverReach-Automation oder einem eigenen Skript) unter actions/cleverreach/webhook/unsubscribe. Leer lassen deaktiviert den Endpunkt vollständig (404) — ein ungeschützter Endpunkt, der echte Abonnenten als abgemeldet markieren kann, ist ein schlechterer Default als ein deaktivierter."|t('cleverreach') }}</p>
+
+{{ forms.textField({
+    label: "Webhook-Secret"|t('cleverreach'),
+    instructions: "Name der Umgebungsvariable, z. B. $CLEVERREACH_WEBHOOK_SECRET. Wird als ?secret=... an die URL angehängt erwartet."|t('cleverreach'),
+    id: 'webhookSecret',
+    name: 'webhookSecret',
+    value: settings.webhookSecret,
+    errors: settings.getErrors('webhookSecret'),
 }) }}
 
 <hr>

@@ -38,6 +38,12 @@ class CommerceOrderPushService extends Component
             return;
         }
 
+        // CR-07: an unsubscribe/bounce notification means this address
+        // shouldn't be touched anymore, order data included.
+        if ($consentRecord->unsubscribedAt !== null) {
+            return;
+        }
+
         $groupId = $consentRecord->groupId ?? Plugin::getInstance()->getSettings()->defaultGroupId;
 
         if ($groupId === null) {
