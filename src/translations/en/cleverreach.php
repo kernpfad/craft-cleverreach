@@ -19,6 +19,7 @@ return [
     'Last sync (CleverReach)' => 'Last sync (CleverReach)',
     'Error {date}: {message}' => 'Error {date}: {message}',
     'OK {date}' => 'OK {date}',
+    'Sync CleverReach attributes for user {id}' => 'Sync CleverReach attributes for user {id}',
 
     'All' => 'All',
     'Search term' => 'Search term',

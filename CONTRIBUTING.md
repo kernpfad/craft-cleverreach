@@ -20,6 +20,7 @@ Individual scripts:
 | `composer phpstan` | Static analysis |
 | `composer rector` / `composer rector:fix` | Rector dry-run / apply |
 | `composer test:unit` | Unit tests (no Craft boot) |
+| `composer test:integration` | Craft-booted suite when `CRAFT_TEST_SITE_PATH` is set (see `tests/integration/README.md`) |
 
 All of ECS, PHPStan, Rector and unit tests must pass clean before a release. Pull requests
 should keep `composer check` green.

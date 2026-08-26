@@ -11,6 +11,7 @@ use craft\elements\User;
 use craft\events\DefineMetadataEvent;
 use craft\events\ModelEvent;
 use craft\helpers\ElementHelper;
+use kernpfad\cleverreach\jobs\SyncUserJob;
 use kernpfad\cleverreach\models\Settings;
 use kernpfad\cleverreach\services\CatalogService;
 use kernpfad\cleverreach\services\CleverReachApiService;
@@ -138,7 +139,13 @@ class Plugin extends BasePlugin
                 }
 
                 $user = $event->sender;
-                $this->userSync->syncUser($user);
+                if ($user->id === null) {
+                    return;
+                }
+
+                // Debounced queue job — keeps the save request off CleverReach's
+                // HTTP path; attributes are loaded when the worker runs.
+                SyncUserJob::enqueue((int) $user->id);
             }
         );
 

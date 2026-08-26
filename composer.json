@@ -83,6 +83,7 @@
         "rector": "rector process --dry-run --ansi",
         "rector:fix": "rector process --ansi",
         "test:unit": "phpunit --colors=always",
+        "test:integration": "php tests/integration/run.php",
         "check": [
             "@check-cs",
             "@phpstan",

@@ -10,6 +10,7 @@ use craft\web\Controller;
 use DateTime;
 use kernpfad\cleverreach\events\ReceiverUnsubscribedEvent;
 use kernpfad\cleverreach\Plugin;
+use kernpfad\cleverreach\util\WebhookSecretGuard;
 use yii\web\NotFoundHttpException;
 use yii\web\Response;
 
@@ -89,14 +90,10 @@ class WebhookController extends Controller
     private function requireValidSecret(): void
     {
         $configuredSecret = Plugin::getInstance()->getSettings()->getWebhookSecret();
-
-        if ($configuredSecret === '') {
-            throw new NotFoundHttpException();
-        }
-
         $providedSecret = (string) Craft::$app->getRequest()->getQueryParam('secret');
+        $result = WebhookSecretGuard::check($configuredSecret, $providedSecret);
 
-        if (!hash_equals($configuredSecret, $providedSecret)) {
+        if ($result !== WebhookSecretGuard::RESULT_OK) {
             throw new NotFoundHttpException();
         }
     }

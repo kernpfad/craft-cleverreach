@@ -111,7 +111,7 @@ Each consent log entry is linked to a matching Craft user by email, whether or n
 
 Two features build on it, both always active and neither requiring Commerce:
 
-- **Sync on user save.** Saving a Craft user transmits their attributes, through the same mapping used at signup — but only if a consent log entry already exists for them. Saving never creates a new subscription. While double opt-in is still pending on CleverReach, attributes are updated with `activated: false` (soft-sync) so data is not lost before confirmation; once confirmed, sync uses the normal activate path. A CleverReach outage never blocks the save; errors are logged and stored on `cleverreach_user_sync`, not thrown.
+- **Sync on user save.** Saving a Craft user enqueues a debounced CleverReach attribute sync (`SyncUserJob`, `userId` only — values are read when the queue worker runs). Sync only runs if a consent log entry already exists. While double opt-in is still pending on CleverReach, attributes are updated with `activated: false` (soft-sync); once confirmed, sync uses the normal activate path. A CleverReach outage never blocks the save; errors are logged and stored on `cleverreach_user_sync`. **A queue worker must be running** (`php craft queue/listen` or equivalent) for sync to complete.
 - **Newsletter status in the user profile.** Where a consent entry exists, the user edit screen's Details pane shows signup date/source, confirmation status, and last sync result (ok/error). Unsubscribed addresses show that status instead.
 
 ## Importing existing contacts
