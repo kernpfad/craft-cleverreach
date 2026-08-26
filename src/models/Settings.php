@@ -72,6 +72,7 @@ class Settings extends Model
     {
         return [
             [['oauthClientId', 'oauthClientSecret', 'catalogPassword', 'webhookSecret'], 'string'],
+            [['defaultGroupId', 'doiFormId'], 'filter', 'filter' => static fn($v) => $v === '' || $v === false ? null : $v],
             [['defaultGroupId', 'doiFormId'], 'integer'],
             [['attributeMapping'], 'safe'],
             [['enableOrderPush', 'enableCatalog'], 'boolean'],

@@ -26,9 +26,9 @@
 
 | ID | Klasse | Item | Status |
 |---|---|---|---|
-| CR-04 | B | Listen/Gruppen-Picker statt manueller IDs | ✅ erledigt — `<select>` auf der Settings-Seite, live befüllt via `GroupsController::actionIndex()` (`GET /groups`), Refresh-Button |
-| CR-05 | D | Letzter Sync-Status am User („CleverReach: ok / Fehler …“) | ✅ erledigt — `lastSyncStatus`/`lastSyncAt`/`lastSyncError` auf `cleverreach_consentlog`, angezeigt im User-Metadata-Panel |
-| CR-06 | D | Double-Opt-In-Status anzeigen / respektieren | ✅ erledigt — `UserSyncService` prüft echten CleverReach-Bestätigungsstatus via `getReceiver()`, aktiviert pending Receiver nicht zwangsweise; `doiConfirmedAt` gecacht und angezeigt |
+| CR-04 | B | Listen/Gruppen-Picker statt manueller IDs | ✅ erledigt — Gruppen- **und** DOI-Form-Picker (`GroupsController` / `FormsController`), jeweils mit manuellem ID-Fallback bei API-Fehler |
+| CR-05 | D | Letzter Sync-Status am User („CleverReach: ok / Fehler …“) | ✅ erledigt — eigene Tabelle `cleverreach_user_sync` (`status`/`message`/`doiConfirmed`), angezeigt im User-Metadata-Panel |
+| CR-06 | D | Double-Opt-In-Status anzeigen / respektieren | ✅ erledigt — Soft-Sync: pending Receiver bekommen Attribute mit `activated: false` (`updateReceiverAttributes`); bestätigt → `activateReceiver`; Order-Push nur bei confirmed |
 
 ### P2
 

@@ -8,6 +8,7 @@ use Craft;
 use craft\base\Component;
 use craft\commerce\elements\Order;
 use kernpfad\cleverreach\Plugin;
+use kernpfad\cleverreach\util\ReceiverSyncDecision;
 use Throwable;
 
 /**
@@ -53,7 +54,16 @@ class CommerceOrderPushService extends Component
         // Runs inside the order-complete flow — a CleverReach outage must never
         // break order completion, so failures are logged, not thrown.
         try {
-            Plugin::getInstance()->cleverReachApi->pushOrderToReceiver(
+            $api = Plugin::getInstance()->cleverReachApi;
+            $receiver = $api->getReceiver((int) $groupId, $email);
+
+            // CR-06: do not push orders (which send activated:true) while DOI
+            // is still pending — that would force-activate the receiver.
+            if ($receiver === null || !ReceiverSyncDecision::isActivated($receiver['activated'] ?? null)) {
+                return;
+            }
+
+            $api->pushOrderToReceiver(
                 (int) $groupId,
                 $email,
                 $this->buildOrderPayload($order)

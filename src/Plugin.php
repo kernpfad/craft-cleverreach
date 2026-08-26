@@ -45,7 +45,7 @@ class Plugin extends BasePlugin
      */
     public const EVENT_RECEIVER_UNSUBSCRIBED = 'receiverUnsubscribed';
 
-    public string $schemaVersion = '1.1.0';
+    public string $schemaVersion = '1.2.0';
     public bool $hasCpSettings = true;
 
     public static function getInstance(): static
@@ -175,23 +175,24 @@ class Plugin extends BasePlugin
                     return;
                 }
 
-                // CR-06: reflects CleverReach's own confirmation state,
-                // not just that this plugin attempted a signup.
-                $event->metadata[Craft::t('cleverreach', 'Confirmation status')] = $record->doiConfirmedAt !== null
+                $sync = $user->id !== null ? $this->userSync->getSyncRecord((int) $user->id) : null;
+
+                // CR-06: last known CleverReach confirmation flag from sync.
+                $event->metadata[Craft::t('cleverreach', 'Confirmation status')] = $sync?->doiConfirmed === true
                     ? Craft::t('cleverreach', 'Confirmed {date}', [
-                        'date' => Craft::$app->getFormatter()->asDate($record->doiConfirmedAt),
+                        'date' => Craft::$app->getFormatter()->asDate($sync->dateUpdated),
                     ])
                     : Craft::t('cleverreach', 'Pending confirmation');
 
-                // CR-05.
-                if ($record->lastSyncAt !== null) {
-                    $event->metadata[Craft::t('cleverreach', 'Last sync (CleverReach)')] = $record->lastSyncStatus === 'error'
+                // CR-05: last sync lives on cleverreach_user_sync.
+                if ($sync !== null) {
+                    $event->metadata[Craft::t('cleverreach', 'Last sync (CleverReach)')] = $sync->status === 'error'
                         ? Craft::t('cleverreach', 'Error {date}: {message}', [
-                            'date' => Craft::$app->getFormatter()->asDate($record->lastSyncAt),
-                            'message' => $record->lastSyncError ?? '',
+                            'date' => Craft::$app->getFormatter()->asDate($sync->dateUpdated),
+                            'message' => $sync->message ?? '',
                         ])
                         : Craft::t('cleverreach', 'OK {date}', [
-                            'date' => Craft::$app->getFormatter()->asDate($record->lastSyncAt),
+                            'date' => Craft::$app->getFormatter()->asDate($sync->dateUpdated),
                         ]);
                 }
             }

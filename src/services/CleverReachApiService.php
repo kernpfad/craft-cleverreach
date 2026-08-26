@@ -151,6 +151,19 @@ class CleverReachApiService extends Component
     }
 
     /**
+     * Updates receiver attributes without forcing activation (CR-06 soft-sync).
+     * Used while a DOI confirmation is still pending so profile data is not
+     * lost until the subscriber confirms — CleverReach keeps `activated: false`.
+     *
+     * @param array<string, mixed> $attributes
+     * @return array<string, mixed>
+     */
+    public function updateReceiverAttributes(int $groupId, string $email, array $attributes = []): array
+    {
+        return $this->upsertReceiver($groupId, $email, false, ['attributes' => $attributes]);
+    }
+
+    /**
      * All groups (lists) in the connected CleverReach account. Used to
      * populate the list picker in the Formie email marketing integration
      * (see integrations/formie/CleverReachEmailMarketing.php).
@@ -160,6 +173,18 @@ class CleverReachApiService extends Component
     public function getGroups(): array
     {
         $result = $this->request('GET', 'groups');
+
+        return array_values(array_filter($result, 'is_array'));
+    }
+
+    /**
+     * DOI / opt-in forms in the connected CleverReach account (CR-04).
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function getForms(): array
+    {
+        $result = $this->request('GET', 'forms');
 
         return array_values(array_filter($result, 'is_array'));
     }

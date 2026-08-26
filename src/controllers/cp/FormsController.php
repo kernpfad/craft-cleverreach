@@ -11,29 +11,29 @@ use Throwable;
 use yii\web\Response;
 
 /**
- * Backs the settings screen's group picker (CR-04) — fetches real groups
- * from the connected CleverReach account so the default target group can
- * be chosen from a list instead of typed in as a raw numeric ID.
+ * Backs the settings screen's DOI form picker (CR-04) — fetches real forms
+ * from the connected CleverReach account so the double-opt-in form can be
+ * chosen from a list instead of typed as a raw numeric ID.
  */
-class GroupsController extends Controller
+class FormsController extends Controller
 {
     public function actionIndex(): Response
     {
         $this->requireAdmin(false);
 
         try {
-            $groups = Plugin::getInstance()->cleverReachApi->getGroups();
+            $forms = Plugin::getInstance()->cleverReachApi->getForms();
         } catch (Throwable $e) {
             return $this->asJson([
                 'success' => false,
                 'message' => $e->getMessage(),
-                'groups' => [],
+                'forms' => [],
             ]);
         }
 
         return $this->asJson([
             'success' => true,
-            'groups' => ApiListNormalizer::normalize($groups),
+            'forms' => ApiListNormalizer::normalize($forms),
         ]);
     }
 }

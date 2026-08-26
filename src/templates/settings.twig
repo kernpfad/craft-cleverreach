@@ -78,28 +78,29 @@
 
 <h2>{{ "Listen & Formulare"|t('cleverreach') }}</h2>
 
-{# CR-04: a picker fetched live from the connected account, instead of a
-   raw numeric ID typed by hand. #}
+{# CR-04: pickers fetched live from the connected account, with a manual
+   ID text fallback when the API is unreachable. #}
 <div class="field" id="cleverreach-groups-field">
     <div class="heading">
-        <label for="defaultGroupId">{{ "Standard-Zielgruppe"|t('cleverreach') }}</label>
+        <label for="{{ 'defaultGroupId'|namespaceInputId }}">{{ "Standard-Zielgruppe"|t('cleverreach') }}</label>
     </div>
     <div class="input ltr">
         <div class="flex">
-            <select id="defaultGroupId" name="defaultGroupId" class="flex-grow">
+            <select id="{{ 'defaultGroupId'|namespaceInputId }}" name="defaultGroupId" class="flex-grow">
                 {% if settings.defaultGroupId %}
                     <option value="{{ settings.defaultGroupId }}" selected>{{ settings.defaultGroupId }}</option>
                 {% else %}
                     <option value="">{{ "Keine ausgewählt"|t('cleverreach') }}</option>
                 {% endif %}
             </select>
-            <button type="button" class="btn" id="cleverreach-groups-refresh">{{ "Gruppen laden"|t('cleverreach') }}</button>
+            <input type="text" id="{{ 'defaultGroupId-fallback'|namespaceInputId }}" class="text hidden flex-grow" value="{{ settings.defaultGroupId }}" size="8" inputmode="numeric">
+            <button type="button" class="btn" id="{{ 'cleverreach-groups-refresh'|namespaceInputId }}">{{ "Gruppen laden"|t('cleverreach') }}</button>
         </div>
     </div>
     <div class="instructions">
-        <p>{{ "Gruppen werden mit dem konfigurierten Zugang live aus deinem CleverReach-Account geladen."|t('cleverreach') }}</p>
+        <p>{{ "Gruppen werden mit dem konfigurierten Zugang live aus deinem CleverReach-Account geladen. Bei Verbindungsfehler kannst du die ID manuell eintragen."|t('cleverreach') }}</p>
     </div>
-    <span id="cleverreach-groups-result" class="hidden"></span>
+    <span id="{{ 'cleverreach-groups-result'|namespaceInputId }}" class="hidden"></span>
     {% if settings.getErrors('defaultGroupId') %}
         <ul class="errors">
             {% for error in settings.getErrors('defaultGroupId') %}
@@ -109,77 +110,143 @@
     {% endif %}
 </div>
 
+<div class="field" id="cleverreach-forms-field">
+    <div class="heading">
+        <label for="{{ 'doiFormId'|namespaceInputId }}">{{ "Double-Opt-in Formular"|t('cleverreach') }}</label>
+    </div>
+    <div class="input ltr">
+        <div class="flex">
+            <select id="{{ 'doiFormId'|namespaceInputId }}" name="doiFormId" class="flex-grow">
+                {% if settings.doiFormId %}
+                    <option value="{{ settings.doiFormId }}" selected>{{ settings.doiFormId }}</option>
+                {% else %}
+                    <option value="">{{ "Keine ausgewählt"|t('cleverreach') }}</option>
+                {% endif %}
+            </select>
+            <input type="text" id="{{ 'doiFormId-fallback'|namespaceInputId }}" class="text hidden flex-grow" value="{{ settings.doiFormId }}" size="8" inputmode="numeric">
+            <button type="button" class="btn" id="{{ 'cleverreach-forms-refresh'|namespaceInputId }}">{{ "Formulare laden"|t('cleverreach') }}</button>
+        </div>
+    </div>
+    <div class="instructions">
+        <p>{{ "Formulare werden mit dem konfigurierten Zugang live aus deinem CleverReach-Account geladen. Bei Verbindungsfehler kannst du die ID manuell eintragen."|t('cleverreach') }}</p>
+    </div>
+    <span id="{{ 'cleverreach-forms-result'|namespaceInputId }}" class="hidden"></span>
+    {% if settings.getErrors('doiFormId') %}
+        <ul class="errors">
+            {% for error in settings.getErrors('doiFormId') %}
+                <li>{{ error }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+</div>
+
 {% js %}
 (function () {
-    const select = document.getElementById({{ 'defaultGroupId'|namespaceInputId|json_encode|raw }});
-    const refreshBtn = document.getElementById({{ 'cleverreach-groups-refresh'|namespaceInputId|json_encode|raw }});
-    const result = document.getElementById({{ 'cleverreach-groups-result'|namespaceInputId|json_encode|raw }});
-    if (!select || !refreshBtn) return;
+    function wirePicker(config) {
+        const select = document.getElementById(config.selectId);
+        const fallback = document.getElementById(config.fallbackId);
+        const refreshBtn = document.getElementById(config.refreshId);
+        const result = document.getElementById(config.resultId);
+        if (!select || !fallback || !refreshBtn || !result) return;
 
-    const selectedId = {{ settings.defaultGroupId|json_encode|raw }};
+        const selectedId = config.selectedId == null ? '' : String(config.selectedId);
 
-    async function loadGroups() {
-        refreshBtn.setAttribute('disabled', 'disabled');
-        result.classList.add('hidden');
-
-        const body = new FormData();
-        body.append(Craft.csrfTokenName, Craft.csrfTokenValue);
-
-        try {
-            const response = await fetch('{{ actionUrl('cleverreach/cp/groups/index') }}', {
-                method: 'POST',
-                headers: { 'Accept': 'application/json' },
-                body,
-            });
-            const data = await response.json();
-
-            if (!data.success) {
-                result.textContent = data.message || 'Could not load groups.';
-                result.className = 'error';
-                return;
-            }
-
-            const current = select.value;
-            select.innerHTML = '';
-
-            const placeholder = document.createElement('option');
-            placeholder.value = '';
-            placeholder.textContent = '{{ "Keine ausgewählt"|t('cleverreach')|e('js') }}';
-            select.appendChild(placeholder);
-
-            for (const group of data.groups || []) {
-                const option = document.createElement('option');
-                option.value = group.id;
-                option.textContent = `${group.name} (#${group.id})`;
-                if (group.id === selectedId || group.id === current) {
-                    option.selected = true;
-                }
-                select.appendChild(option);
-            }
-
-            result.textContent = '{{ "Gruppen geladen."|t('cleverreach') }}';
-            result.className = 'success';
-        } catch (error) {
-            result.textContent = String(error);
+        function showFallback(message) {
+            const current = select.value || selectedId;
+            select.removeAttribute('name');
+            select.classList.add('hidden');
+            fallback.name = config.fieldName;
+            fallback.value = current;
+            fallback.classList.remove('hidden');
+            result.textContent = message;
             result.className = 'error';
-        } finally {
-            refreshBtn.removeAttribute('disabled');
         }
+
+        function showSelect() {
+            fallback.removeAttribute('name');
+            fallback.classList.add('hidden');
+            select.name = config.fieldName;
+            select.classList.remove('hidden');
+        }
+
+        async function load() {
+            refreshBtn.setAttribute('disabled', 'disabled');
+            result.classList.add('hidden');
+
+            const body = new FormData();
+            body.append(Craft.csrfTokenName, Craft.csrfTokenValue);
+
+            try {
+                const response = await fetch(config.actionUrl, {
+                    method: 'POST',
+                    headers: { 'Accept': 'application/json' },
+                    body,
+                });
+                const data = await response.json();
+
+                if (!data.success) {
+                    showFallback(data.message || config.failMessage);
+                    return;
+                }
+
+                showSelect();
+                const current = select.value || fallback.value || selectedId;
+                select.innerHTML = '';
+
+                const placeholder = document.createElement('option');
+                placeholder.value = '';
+                placeholder.textContent = {{ "Keine ausgewählt"|t('cleverreach')|json_encode|raw }};
+                select.appendChild(placeholder);
+
+                for (const item of data[config.itemsKey] || []) {
+                    const option = document.createElement('option');
+                    option.value = item.id;
+                    option.textContent = `${item.name} (#${item.id})`;
+                    if (String(item.id) === String(selectedId) || String(item.id) === String(current)) {
+                        option.selected = true;
+                    }
+                    select.appendChild(option);
+                }
+
+                result.textContent = config.successMessage;
+                result.className = 'success';
+            } catch (error) {
+                showFallback(String(error));
+            } finally {
+                refreshBtn.removeAttribute('disabled');
+            }
+        }
+
+        refreshBtn.addEventListener('click', load);
     }
 
-    refreshBtn.addEventListener('click', loadGroups);
+    wirePicker({
+        selectId: {{ 'defaultGroupId'|namespaceInputId|json_encode|raw }},
+        fallbackId: {{ 'defaultGroupId-fallback'|namespaceInputId|json_encode|raw }},
+        refreshId: {{ 'cleverreach-groups-refresh'|namespaceInputId|json_encode|raw }},
+        resultId: {{ 'cleverreach-groups-result'|namespaceInputId|json_encode|raw }},
+        fieldName: 'defaultGroupId',
+        selectedId: {{ settings.defaultGroupId|json_encode|raw }},
+        actionUrl: {{ actionUrl('cleverreach/cp/groups/index')|json_encode|raw }},
+        itemsKey: 'groups',
+        failMessage: {{ "Gruppen konnten nicht geladen werden."|t('cleverreach')|json_encode|raw }},
+        successMessage: {{ "Gruppen geladen."|t('cleverreach')|json_encode|raw }},
+    });
+
+    wirePicker({
+        selectId: {{ 'doiFormId'|namespaceInputId|json_encode|raw }},
+        fallbackId: {{ 'doiFormId-fallback'|namespaceInputId|json_encode|raw }},
+        refreshId: {{ 'cleverreach-forms-refresh'|namespaceInputId|json_encode|raw }},
+        resultId: {{ 'cleverreach-forms-result'|namespaceInputId|json_encode|raw }},
+        fieldName: 'doiFormId',
+        selectedId: {{ settings.doiFormId|json_encode|raw }},
+        actionUrl: {{ actionUrl('cleverreach/cp/forms/index')|json_encode|raw }},
+        itemsKey: 'forms',
+        failMessage: {{ "Formulare konnten nicht geladen werden."|t('cleverreach')|json_encode|raw }},
+        successMessage: {{ "Formulare geladen."|t('cleverreach')|json_encode|raw }},
+    });
 })();
 {% endjs %}
-
-{{ forms.textField({
-    label: "Double-Opt-in Formular-ID"|t('cleverreach'),
-    instructions: "CleverReach-Formular-ID für den Versand der Bestätigungsmail."|t('cleverreach'),
-    id: 'doiFormId',
-    name: 'doiFormId',
-    value: settings.doiFormId,
-    size: 8,
-    errors: settings.getErrors('doiFormId'),
-}) }}
 
 <hr>
 

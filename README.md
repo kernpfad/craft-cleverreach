@@ -16,7 +16,7 @@ composer require kernpfad/craft-cleverreach
 php craft plugin/install cleverreach
 ```
 
-Installation creates the `cleverreach_consentlog` table, which holds your own record of consent, independent of CleverReach's double opt-in log.
+Installation creates the `cleverreach_consentlog` table (consent proof) and, from schema 1.2.0, `cleverreach_user_sync` (last attribute-sync status per Craft user).
 
 ## Configuration
 
@@ -28,7 +28,7 @@ Installation creates the `cleverreach_consentlog` table, which holds your own re
    CLEVERREACH_CLIENT_SECRET="..."
    ```
 
-3. Under *Settings → Plugins → CleverReach*, enter the variable names (`$CLEVERREACH_CLIENT_ID` / `$CLEVERREACH_CLIENT_SECRET`), the default group ID, the double opt-in form ID, and optionally the attribute mapping and the order-push switch.
+3. Under *Settings → Plugins → CleverReach*, enter the variable names (`$CLEVERREACH_CLIENT_ID` / `$CLEVERREACH_CLIENT_SECRET`), pick the default group and double-opt-in form (loaded live from your account; you can still type IDs manually if the API is unreachable), and optionally configure attribute mapping and the order-push switch.
 
 There is no OAuth browser handshake. The client credentials grant authenticates the plugin server-side against the account that created the OAuth app.
 
@@ -38,8 +38,8 @@ There is no OAuth browser handshake. The client credentials grant authenticates 
 |---|---|---|
 | `oauthClientId` | empty | Env var reference holding the OAuth client ID. |
 | `oauthClientSecret` | empty | Env var reference holding the OAuth client secret. |
-| `defaultGroupId` | `null` | CleverReach group new receivers are added to. |
-| `doiFormId` | `null` | Double opt-in form used to trigger the confirmation mail. |
+| `defaultGroupId` | `null` | CleverReach group new receivers are added to (picker + manual fallback). |
+| `doiFormId` | `null` | Double opt-in form used to trigger the confirmation mail (picker + manual fallback). |
 | `attributeMapping` | none | Craft field handle → CleverReach attribute name. |
 | `enableOrderPush` | `false` | Push completed Commerce orders for existing subscribers. |
 | `enableCatalog` | `false` | Expose Commerce products to CleverReach's My Content search. |
@@ -111,8 +111,8 @@ Each consent log entry is linked to a matching Craft user by email, whether or n
 
 Two features build on it, both always active and neither requiring Commerce:
 
-- **Sync on user save.** Saving a Craft user transmits their attributes, through the same mapping used at signup — but only if a consent log entry already exists for them. Saving never creates a new subscription. A CleverReach outage never blocks the save; errors are logged, not thrown.
-- **Newsletter status in the user profile.** Where a consent entry exists, the user edit screen's Details pane shows a *Newsletter (CleverReach)* line with the signup date and source. Nothing is shown for users without one.
+- **Sync on user save.** Saving a Craft user transmits their attributes, through the same mapping used at signup — but only if a consent log entry already exists for them. Saving never creates a new subscription. While double opt-in is still pending on CleverReach, attributes are updated with `activated: false` (soft-sync) so data is not lost before confirmation; once confirmed, sync uses the normal activate path. A CleverReach outage never blocks the save; errors are logged and stored on `cleverreach_user_sync`, not thrown.
+- **Newsletter status in the user profile.** Where a consent entry exists, the user edit screen's Details pane shows signup date/source, confirmation status, and last sync result (ok/error). Unsubscribed addresses show that status instead.
 
 ## Importing existing contacts
 

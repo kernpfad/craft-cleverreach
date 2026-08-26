@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.2.0 - Unreleased
+
+### Added
+- (CR-04 delta) DOI form picker on the settings screen (live `GET /forms` via `cleverreach/cp/forms/index`), plus a manual ID text fallback for both groups and forms when the API is unreachable.
+- (CR-05 delta) Dedicated `cleverreach_user_sync` table for last sync status / DOI confirmation flag per Craft user. Migration `m260826_000000_user_sync_table` backfills from the previous consent-log columns and drops `lastSyncStatus` / `lastSyncAt` / `lastSyncError` / `doiConfirmedAt` from `cleverreach_consentlog`.
+- (CR-06 delta) Soft attribute sync while double opt-in is still pending: `CleverReachApiService::updateReceiverAttributes()` upserts with `activated: false` so profile data is not lost before confirmation. Order push skips pending receivers so it cannot force-activate them.
+
+### Changed
+- User metadata "Confirmation status" / "Last sync" now read from `cleverreach_user_sync` instead of the consent log.
+- `activated` detection accepts CleverReach's timestamp convention (not only boolean `true`).
+
 ## 1.1.0 - Unreleased
 
 ### Added
