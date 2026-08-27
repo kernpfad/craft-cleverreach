@@ -5,7 +5,7 @@
 ### Added
 - User attribute sync now runs via a debounced Craft queue job (`SyncUserJob`): `User::EVENT_AFTER_SAVE` enqueues by `userId` only (5s delay, ~30s cache gate) so the save request no longer waits on CleverReach HTTP, and later profile edits inside the window are included when the worker runs.
 - Unit helpers/tests for webhook secret validation (`WebhookSecretGuard`) and sync enqueue constants (`SyncEnqueueGate`).
-- `composer test:integration` soft entry + agent prompt for Craft-booted cases against `CRAFT_TEST_SITE_PATH`.
+- `composer test:integration` now runs a real Craft-booted PHPUnit suite (`tests/integration/`) against `CRAFT_TEST_SITE_PATH`: `SyncUserJob` debounce/consent/soft-sync behaviour driven through real `User` saves and `queue/run`, plus the unsubscribe webhook's secret check and consent update driven through the real controller action. See `tests/integration/README.md`.
 
 ### Changed
 - Unsubscribe webhook secret check goes through `WebhookSecretGuard` (same 404-on-disabled/mismatch behaviour).

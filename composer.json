@@ -82,8 +82,8 @@
         "phpstan": "phpstan analyse --memory-limit=1G --ansi",
         "rector": "rector process --dry-run --ansi",
         "rector:fix": "rector process --ansi",
-        "test:unit": "phpunit --colors=always",
-        "test:integration": "php tests/integration/run.php",
+        "test:unit": "phpunit --testsuite unit --colors=always",
+        "test:integration": "phpunit --testsuite integration --colors=always",
         "check": [
             "@check-cs",
             "@phpstan",
