@@ -31,6 +31,25 @@ class FakeCleverReachApiService extends CleverReachApiService
         return $this->receiverToReturn;
     }
 
+    /**
+     * @param array<string, mixed> $attributes
+     * @return array<string, mixed>
+     */
+    public function createReceiverForDoubleOptIn(int $groupId, string $email, array $attributes = []): array
+    {
+        $this->calls[] = ['method' => 'createReceiverForDoubleOptIn', 'groupId' => $groupId, 'email' => $email, 'attributes' => $attributes];
+
+        return ['email' => $email, 'activated' => false];
+    }
+
+    /** @return array<string, mixed> */
+    public function sendDoubleOptInMail(int $doiFormId, string $email): array
+    {
+        $this->calls[] = ['method' => 'sendDoubleOptInMail', 'doiFormId' => $doiFormId, 'email' => $email];
+
+        return [];
+    }
+
     public function activateReceiver(int $groupId, string $email, array $attributes = []): array
     {
         $this->calls[] = ['method' => 'activateReceiver', 'groupId' => $groupId, 'email' => $email, 'attributes' => $attributes];

@@ -215,6 +215,45 @@ class UserSyncQueueTest extends TestCase
         self::assertTrue((bool) $record->doiConfirmed);
     }
 
+    public function testUserSyncAppliesConfiguredTagsAfterASuccessfulSync(): void
+    {
+        $user = $this->createUser('it-tags');
+        $this->givenConsent($user, groupId: 505);
+        $this->fakeApi->receiverToReturn = ['email' => $user->email, 'activated' => time()];
+
+        $settings = Plugin::getInstance()->getSettings();
+        $previousTags = $settings->userSyncTags;
+        $settings->userSyncTags = 'synced, crm';
+
+        try {
+            $this->runDueJobsFor((int) $user->id);
+        } finally {
+            $settings->userSyncTags = $previousTags;
+        }
+
+        $methods = array_column($this->fakeApi->calls, 'method');
+        self::assertSame(['activateReceiver', 'addTags'], $methods);
+        self::assertSame(['synced', 'crm'], $this->fakeApi->calls[1]['tags']);
+        self::assertSame($user->email, $this->fakeApi->calls[1]['email']);
+        self::assertSame(505, $this->fakeApi->calls[1]['groupId']);
+    }
+
+    public function testUserSyncTagsAreNotAppliedWhenUserSyncTagsIsEmpty(): void
+    {
+        // Default install state — asserted explicitly so a future default
+        // change doesn't silently start tagging every synced user.
+        $user = $this->createUser('it-no-tags');
+        $this->givenConsent($user, groupId: 506);
+        $this->fakeApi->receiverToReturn = ['email' => $user->email, 'activated' => time()];
+
+        $settings = Plugin::getInstance()->getSettings();
+        self::assertSame('', $settings->userSyncTags, 'Expected the shared test install to have userSyncTags unconfigured.');
+
+        $this->runDueJobsFor((int) $user->id);
+
+        self::assertSame(['activateReceiver'], array_column($this->fakeApi->calls, 'method'));
+    }
+
     private function createUser(string $label): User
     {
         $email = sprintf('cleverreach-it-%s-%s@example.test', $label, bin2hex(random_bytes(4)));

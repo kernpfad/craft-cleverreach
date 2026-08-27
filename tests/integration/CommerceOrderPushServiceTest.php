@@ -44,6 +44,7 @@ use craft\commerce\records\Transaction as TransactionRecord;
 use craft\elements\User;
 use craft\helpers\Db;
 use DateTime;
+use kernpfad\cleverreach\jobs\PushOrderJob;
 use kernpfad\cleverreach\Plugin;
 use kernpfad\cleverreach\records\ConsentLogRecord;
 use kernpfad\cleverreach\tests\integration\fakes\FakeCleverReachApiService;
@@ -203,6 +204,40 @@ class CommerceOrderPushServiceTest extends TestCase
         self::assertSame(2, $call['orderPayload']['items'][0]['quantity']);
     }
 
+    public function testASecondEnqueueWithinTheDebounceWindowOnlyEverProducesOneEffectivePush(): void
+    {
+        // Same debounce mechanism as SyncUserJob's: PushOrderJob::enqueue()
+        // is the same public entry point Plugin::attachCommerceEventHandlers()
+        // calls, so a second signal for the same order (e.g. a retried
+        // webhook, or EVENT_AFTER_COMPLETE_ORDER firing more than once) must
+        // not stack up a second job.
+        $email = $this->uniqueEmail('debounce');
+        $this->givenConsent($email, groupId: 606);
+        $this->fakeApi->receiverToReturn = ['email' => $email, 'activated' => true];
+
+        $order = $this->createOrder($email);
+        $order->markAsComplete();
+
+        self::assertSame(
+            1,
+            $this->pendingJobCountFor((int) $order->id),
+            'Expected exactly one pending job after order completion.'
+        );
+
+        PushOrderJob::enqueue((int) $order->id);
+
+        self::assertSame(
+            1,
+            $this->pendingJobCountFor((int) $order->id),
+            'A second enqueue within the debounce window must not add a second job.'
+        );
+
+        $this->runQueuedOrderPush((int) $order->id);
+
+        self::assertCount(1, $this->fakeApi->calls, 'Only one push attempt should have run.');
+        self::assertSame('pushOrderToReceiver', $this->fakeApi->calls[0]['method']);
+    }
+
     public function testSuccessfulPushAppliesOrderCompleteTags(): void
     {
         $email = $this->uniqueEmail('tagged');
@@ -248,6 +283,13 @@ class CommerceOrderPushServiceTest extends TestCase
 
         self::assertTrue($order->isCompleted);
         self::assertSame([], $this->fakeApi->calls);
+    }
+
+    private function pendingJobCountFor(int $orderId): int
+    {
+        return (int) Craft::$app->getDb()->createCommand(
+            'SELECT COUNT(*) FROM {{%queue}} WHERE [[description]] LIKE :desc AND [[fail]] = 0'
+        )->bindValue(':desc', '%order ' . $orderId . '%')->queryScalar();
     }
 
     /**
