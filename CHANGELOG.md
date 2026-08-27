@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.4.0 - Unreleased
+
+### Added
+- (CR-10) CleverReach receiver tags for automations: settings `orderCompleteTags`, `subscribeTags`, `userSyncTags` (comma-separated), `TagService` / `Plugin::EVENT_BEFORE_APPLY_TAGS`, and `CleverReachApiService::addTags()` via `POST groups/{id}/receivers/{email}/tags` (one receiver at a time so THEA triggers fire).
+- (CR-11) Commerce order push runs via debounced `PushOrderJob` (`orderId` only, 5s delay, ~30s cache gate). After a successful push, configured order-complete tags are applied in the same job; a failed push does not apply tags and never breaks order completion.
+
 ## 1.3.0 - Unreleased
 
 ### Added

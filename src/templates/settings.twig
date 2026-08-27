@@ -281,11 +281,43 @@
 
 <hr>
 
+<h2>{{ "Tags / Automationen"|t('cleverreach') }}</h2>
+<p class="light">{{ "Kommaseparierte CleverReach-Tag-Namen. Müssen mit den Tags in CleverReach-Automationen übereinstimmen. Leer = aus. Tags werden pro Empfänger gesetzt (Batch triggert keine Automationen)."|t('cleverreach') }}</p>
+
+{{ forms.textField({
+    label: "Tags nach Bestellung"|t('cleverreach'),
+    instructions: "Nach erfolgreichem Order-Push (z. B. purchased, customer)."|t('cleverreach'),
+    id: 'orderCompleteTags',
+    name: 'orderCompleteTags',
+    value: settings.orderCompleteTags,
+    errors: settings.getErrors('orderCompleteTags'),
+}) }}
+
+{{ forms.textField({
+    label: "Tags nach Anmeldung"|t('cleverreach'),
+    instructions: "Nach erfolgreichem Consent-Log beim Subscribe."|t('cleverreach'),
+    id: 'subscribeTags',
+    name: 'subscribeTags',
+    value: settings.subscribeTags,
+    errors: settings.getErrors('subscribeTags'),
+}) }}
+
+{{ forms.textField({
+    label: "Tags nach User-Sync"|t('cleverreach'),
+    instructions: "Nach erfolgreichem Attribut-Sync am Craft-User."|t('cleverreach'),
+    id: 'userSyncTags',
+    name: 'userSyncTags',
+    value: settings.userSyncTags,
+    errors: settings.getErrors('userSyncTags'),
+}) }}
+
+<hr>
+
 <h2>{{ "Craft Commerce"|t('cleverreach') }}</h2>
 
 {{ forms.lightswitchField({
     label: "Bestellungen an CleverReach senden"|t('cleverreach'),
-    instructions: "Sendet abgeschlossene Bestellungen bereits angemeldeter (Double-Opt-in-bestätigter) Empfänger als Order-Daten an CleverReach, damit dortige Automation-Flows greifen. Nur wirksam, wenn Craft Commerce installiert ist. Legt niemals einen neuen Empfänger allein aufgrund einer Bestellung an."|t('cleverreach'),
+    instructions: "Sendet abgeschlossene Bestellungen bereits angemeldeter (Double-Opt-in-bestätigter) Empfänger als Order-Daten an CleverReach (debounced Queue-Job). Danach optional die Tags nach Bestellung. Nur wirksam, wenn Craft Commerce installiert ist. Legt niemals einen neuen Empfänger allein aufgrund einer Bestellung an."|t('cleverreach'),
     id: 'enableOrderPush',
     name: 'enableOrderPush',
     on: settings.enableOrderPush,

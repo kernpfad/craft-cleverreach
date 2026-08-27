@@ -38,6 +38,13 @@
 | CR-08 | D | Payload-Mutator Events | ✅ erledigt — `Plugin::EVENT_MODIFY_RECEIVER_PAYLOAD`, feuert vor jedem Receiver-Upsert |
 | CR-09 | A | Optional Authorization-Code-Flow nur wenn Merchants es brauchen — Client Credentials Default lassen | ⏭️ bewusst nicht umgesetzt — die Formulierung selbst ist konditional ("nur wenn Merchants es brauchen"); kein konkreter Bedarf für einen Browser-Authorize-Flow ist aufgetaucht, Client Credentials bleibt Default |
 
+### P3
+
+| ID | Klasse | Item | Status |
+|---|---|---|---|
+| CR-10 | D | CleverReach-Tags für Automationen | ✅ erledigt — Settings (`orderCompleteTags` / `subscribeTags` / `userSyncTags`) + `TagService` + `EVENT_BEFORE_APPLY_TAGS`; API `addTags` pro Receiver |
+| CR-11 | D | Order-Push in Queue | ✅ erledigt — `PushOrderJob` (`orderId`, Debounce); nach erfolgreichem Push Order-Tags im selben Job |
+
 ### Nicht tun
 
 - Formie hard-requiren

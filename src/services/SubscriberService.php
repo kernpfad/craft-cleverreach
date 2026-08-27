@@ -138,6 +138,12 @@ class SubscriberService extends Component
             $userId ?? $this->resolveUserId($email)
         );
 
+        Plugin::getInstance()->tags->applyFromSettings(
+            TagService::CONTEXT_SUBSCRIBE,
+            $email,
+            $groupId
+        );
+
         return true;
     }
 

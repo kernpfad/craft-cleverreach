@@ -8,6 +8,7 @@ use Craft;
 use craft\base\Component;
 use craft\commerce\elements\Order;
 use kernpfad\cleverreach\Plugin;
+use kernpfad\cleverreach\util\OrderTagDecision;
 use kernpfad\cleverreach\util\ReceiverSyncDecision;
 use Throwable;
 
@@ -16,10 +17,12 @@ use Throwable;
  * CleverReach's own automation flows (welcome mail after first order,
  * reactivation, post-purchase) can react to it.
  *
+ * Invoked from {@see \kernpfad\cleverreach\jobs\PushOrderJob} so the
+ * order-complete request never waits on CleverReach HTTP. On a successful
+ * push, configured order-complete tags are applied in the same run (CR-10).
+ *
  * This class is only ever loaded/called when Craft Commerce is installed
  * and `enableOrderPush` is on — see Plugin::attachCommerceEventHandlers().
- * It's kept separate from SubscriberService/CleverReachApiService so the
- * rest of the plugin has no hard dependency on craftcms/commerce.
  */
 class CommerceOrderPushService extends Component
 {
@@ -51,8 +54,8 @@ class CommerceOrderPushService extends Component
             return;
         }
 
-        // Runs inside the order-complete flow — a CleverReach outage must never
-        // break order completion, so failures are logged, not thrown.
+        $pushSucceeded = false;
+
         try {
             $api = Plugin::getInstance()->cleverReachApi;
             $receiver = $api->getReceiver((int) $groupId, $email);
@@ -68,9 +71,20 @@ class CommerceOrderPushService extends Component
                 $email,
                 $this->buildOrderPayload($order)
             );
+            $pushSucceeded = true;
         } catch (Throwable $e) {
             Craft::error('CleverReach order push failed: ' . $e->getMessage(), __METHOD__);
         }
+
+        if (!OrderTagDecision::shouldApplyTags($pushSucceeded)) {
+            return;
+        }
+
+        Plugin::getInstance()->tags->applyFromSettings(
+            TagService::CONTEXT_ORDER_COMPLETE,
+            $email,
+            (int) $groupId
+        );
     }
 
     /**

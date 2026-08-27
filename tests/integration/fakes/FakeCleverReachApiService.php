@@ -55,4 +55,15 @@ class FakeCleverReachApiService extends CleverReachApiService
 
         return ['email' => $email, 'activated' => true];
     }
+
+    /**
+     * @param list<string> $tags
+     * @return list<string>
+     */
+    public function addTags(int $groupId, string $email, array $tags = []): array
+    {
+        $this->calls[] = ['method' => 'addTags', 'groupId' => $groupId, 'email' => $email, 'tags' => $tags];
+
+        return $tags;
+    }
 }

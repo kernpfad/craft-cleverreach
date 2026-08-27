@@ -11,6 +11,7 @@ use craft\elements\User;
 use craft\events\DefineMetadataEvent;
 use craft\events\ModelEvent;
 use craft\helpers\ElementHelper;
+use kernpfad\cleverreach\jobs\PushOrderJob;
 use kernpfad\cleverreach\jobs\SyncUserJob;
 use kernpfad\cleverreach\models\Settings;
 use kernpfad\cleverreach\services\CatalogService;
@@ -18,6 +19,7 @@ use kernpfad\cleverreach\services\CleverReachApiService;
 use kernpfad\cleverreach\services\CommerceOrderPushService;
 use kernpfad\cleverreach\services\ConsentService;
 use kernpfad\cleverreach\services\SubscriberService;
+use kernpfad\cleverreach\services\TagService;
 use kernpfad\cleverreach\services\UserSyncService;
 use yii\base\Event;
 
@@ -28,6 +30,7 @@ use yii\base\Event;
  * @property-read CommerceOrderPushService $commerceOrderPush
  * @property-read CatalogService $catalog
  * @property-read UserSyncService $userSync
+ * @property-read TagService $tags
  * @property Settings $settings
  * @method Settings getSettings()
  */
@@ -45,6 +48,12 @@ class Plugin extends BasePlugin
      * receiver (CR-07).
      */
     public const EVENT_RECEIVER_UNSUBSCRIBED = 'receiverUnsubscribed';
+
+    /**
+     * Fired before CleverReach receiver tags are applied (CR-10).
+     * Handlers may mutate tags or cancel via `$event->isValid = false`.
+     */
+    public const EVENT_BEFORE_APPLY_TAGS = 'beforeApplyTags';
 
     public string $schemaVersion = '1.2.0';
     public bool $hasCpSettings = true;
@@ -70,6 +79,7 @@ class Plugin extends BasePlugin
             'commerceOrderPush' => CommerceOrderPushService::class,
             'catalog' => CatalogService::class,
             'userSync' => UserSyncService::class,
+            'tags' => TagService::class,
         ]);
 
         $this->attachUserEventHandlers();
@@ -118,7 +128,13 @@ class Plugin extends BasePlugin
             function(Event $event) {
                 /** @var \craft\commerce\elements\Order $order */
                 $order = $event->sender;
-                $this->commerceOrderPush->pushOrder($order);
+                if ($order->id === null) {
+                    return;
+                }
+
+                // Debounced queue job — order completion must not wait on
+                // CleverReach; tags run in the same job after a successful push.
+                PushOrderJob::enqueue((int) $order->id);
             }
         );
     }

@@ -65,12 +65,22 @@ class UserSyncService extends Component
             if ($action === ReceiverSyncDecision::ACTION_SOFT_UPDATE) {
                 $api->updateReceiverAttributes((int) $groupId, $email, $attributes);
                 $this->recordSyncResult((int) $user->id, 'ok', null, false);
+                Plugin::getInstance()->tags->applyFromSettings(
+                    TagService::CONTEXT_USER_SYNC,
+                    $email,
+                    (int) $groupId
+                );
 
                 return;
             }
 
             $api->activateReceiver((int) $groupId, $email, $attributes);
             $this->recordSyncResult((int) $user->id, 'ok', null, true);
+            Plugin::getInstance()->tags->applyFromSettings(
+                TagService::CONTEXT_USER_SYNC,
+                $email,
+                (int) $groupId
+            );
         } catch (Throwable $e) {
             Craft::error('CleverReach user sync failed: ' . $e->getMessage(), __METHOD__);
             $this->recordSyncResult((int) $user->id, 'error', $e->getMessage(), null);

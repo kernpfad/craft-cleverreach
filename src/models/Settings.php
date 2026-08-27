@@ -68,10 +68,26 @@ class Settings extends Model
      */
     public string $webhookSecret = '';
 
+    /**
+     * Comma-separated CleverReach tags applied after a successful order push (CR-10).
+     * Empty disables. Tag names must match automations in CleverReach.
+     */
+    public string $orderCompleteTags = '';
+
+    /**
+     * Comma-separated tags applied after a successful subscribe/consent write.
+     */
+    public string $subscribeTags = '';
+
+    /**
+     * Comma-separated tags applied after a successful user attribute sync.
+     */
+    public string $userSyncTags = '';
+
     public function rules(): array
     {
         return [
-            [['oauthClientId', 'oauthClientSecret', 'catalogPassword', 'webhookSecret'], 'string'],
+            [['oauthClientId', 'oauthClientSecret', 'catalogPassword', 'webhookSecret', 'orderCompleteTags', 'subscribeTags', 'userSyncTags'], 'string'],
             [['defaultGroupId', 'doiFormId'], 'filter', 'filter' => static fn($v) => $v === '' || $v === false ? null : $v],
             [['defaultGroupId', 'doiFormId'], 'integer'],
             [['attributeMapping'], 'safe'],

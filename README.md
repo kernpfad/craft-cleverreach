@@ -101,9 +101,23 @@ If you don't need documented proof of consent, Formie's built-in integration is 
 
 ## Commerce order push
 
-With Commerce installed and the order-push switch on, every completed order (`Order::EVENT_AFTER_COMPLETE_ORDER`) is checked against the consent log. Order data — number, date, total, line items — is transmitted only when consent already exists for that address. **A new recipient is never created from an order alone.**
+With Commerce installed and the order-push switch on, every completed order (`Order::EVENT_AFTER_COMPLETE_ORDER`) enqueues a debounced `PushOrderJob`. The worker checks the consent log and pushes order data — number, date, total, line items — only when consent already exists and the receiver is DOI-confirmed. **A new recipient is never created from an order alone.** **A queue worker must be running** for the push to complete.
 
-The automations themselves (welcome mail after a first purchase, reactivation, post-purchase) are configured as flows on the CleverReach side. This plugin supplies the data.
+Optional **order-complete tags** (settings) are applied only after a successful push, so CleverReach automations can react (tags are set per receiver; batch tagging does not trigger automations).
+
+The automations themselves (welcome mail after a first purchase, reactivation, post-purchase) are configured as flows on the CleverReach side. This plugin supplies the data and optional tags.
+
+## Tags / automations
+
+Under *Settings → Plugins → CleverReach* you can set comma-separated CleverReach tag names for:
+
+| Setting | When |
+|---|---|
+| `orderCompleteTags` | After a successful queued order push |
+| `subscribeTags` | After a successful subscribe/consent write |
+| `userSyncTags` | After a successful user attribute sync |
+
+Projects can also call `Plugin::getInstance()->tags->apply($email, $tags, $context)` or listen to `Plugin::EVENT_BEFORE_APPLY_TAGS` to mutate/cancel tags.
 
 ## Craft user linking
 

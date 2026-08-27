@@ -9,9 +9,9 @@ namespace kernpfad\cleverreach\tests\integration;
  * `CommerceOrderPushService` through the actual production pipeline:
  * create a real product/order, complete it, and let
  * `Order::EVENT_AFTER_COMPLETE_ORDER` fire through
- * `Plugin::attachCommerceEventHandlers()` into
- * `CommerceOrderPushService::pushOrder()` — nothing here calls that method
- * directly.
+ * `Plugin::attachCommerceEventHandlers()` into a debounced
+ * {@see \kernpfad\cleverreach\jobs\PushOrderJob}. Tests force the job due
+ * and run it via `queue/run` — they never call `pushOrder()` directly.
  *
  * `Plugin::attachCommerceEventHandlers()` only runs at `Plugin::init()` if
  * `enableOrderPush` was already `true` in project config *before* boot —
@@ -148,6 +148,7 @@ class CommerceOrderPushServiceTest extends TestCase
         $order = $this->createOrder($this->uniqueEmail('no-consent'));
 
         $order->markAsComplete();
+        $this->runQueuedOrderPush((int) $order->id);
 
         self::assertSame([], $this->fakeApi->calls);
     }
@@ -159,6 +160,7 @@ class CommerceOrderPushServiceTest extends TestCase
 
         $order = $this->createOrder($email);
         $order->markAsComplete();
+        $this->runQueuedOrderPush((int) $order->id);
 
         self::assertSame([], $this->fakeApi->calls);
     }
@@ -174,6 +176,7 @@ class CommerceOrderPushServiceTest extends TestCase
 
         $order = $this->createOrder($email);
         $order->markAsComplete();
+        $this->runQueuedOrderPush((int) $order->id);
 
         self::assertSame([], $this->fakeApi->calls);
     }
@@ -186,6 +189,7 @@ class CommerceOrderPushServiceTest extends TestCase
 
         $order = $this->createOrder($email, qty: 2, unitPrice: 15.00);
         $order->markAsComplete();
+        $this->runQueuedOrderPush((int) $order->id);
 
         self::assertCount(1, $this->fakeApi->calls);
         $call = $this->fakeApi->calls[0];
@@ -199,17 +203,74 @@ class CommerceOrderPushServiceTest extends TestCase
         self::assertSame(2, $call['orderPayload']['items'][0]['quantity']);
     }
 
-    public function testAFailedPushDoesNotBreakOrderCompletion(): void
+    public function testSuccessfulPushAppliesOrderCompleteTags(): void
+    {
+        $email = $this->uniqueEmail('tagged');
+        $this->givenConsent($email, groupId: 605);
+        $this->fakeApi->receiverToReturn = ['email' => $email, 'activated' => true];
+
+        $settings = Plugin::getInstance()->getSettings();
+        $previousTags = $settings->orderCompleteTags;
+        $settings->orderCompleteTags = 'purchased, customer';
+
+        try {
+            $order = $this->createOrder($email);
+            $order->markAsComplete();
+            $this->runQueuedOrderPush((int) $order->id);
+        } finally {
+            $settings->orderCompleteTags = $previousTags;
+        }
+
+        $methods = array_column($this->fakeApi->calls, 'method');
+        self::assertSame(['pushOrderToReceiver', 'addTags'], $methods);
+        self::assertSame(['purchased', 'customer'], $this->fakeApi->calls[1]['tags']);
+        self::assertSame(605, $this->fakeApi->calls[1]['groupId']);
+    }
+
+    public function testAFailedPushDoesNotApplyTagsOrBreakCompletion(): void
     {
         $email = $this->uniqueEmail('api-failure');
         $this->givenConsent($email, groupId: 604);
         $this->fakeApi->receiverToReturn = ['email' => $email, 'activated' => true];
         $this->fakeApi->throwOnPushOrder = true;
 
-        $order = $this->createOrder($email);
-        $order->markAsComplete();
+        $settings = Plugin::getInstance()->getSettings();
+        $previousTags = $settings->orderCompleteTags;
+        $settings->orderCompleteTags = 'should-not-apply';
+
+        try {
+            $order = $this->createOrder($email);
+            $order->markAsComplete();
+            $this->runQueuedOrderPush((int) $order->id);
+        } finally {
+            $settings->orderCompleteTags = $previousTags;
+        }
 
         self::assertTrue($order->isCompleted);
+        self::assertSame([], $this->fakeApi->calls);
+    }
+
+    /**
+     * Clears the order enqueue debounce key, forces any pending PushOrderJob
+     * due, and runs it via queue/run (same pattern as UserSyncQueueTest).
+     */
+    private function runQueuedOrderPush(int $orderId): void
+    {
+        Craft::$app->getCache()?->delete(\kernpfad\cleverreach\util\OrderEnqueueGate::cacheKey($orderId));
+
+        Craft::$app->getDb()->createCommand()
+            ->update('{{%queue}}', ['delay' => 0, 'timePushed' => 0], [
+                'and',
+                ['fail' => 0],
+                ['like', 'description', '%order ' . $orderId . '%', false],
+            ])
+            ->execute();
+
+        Craft::$app->runAction('queue/run', ['isolate' => false]);
+
+        Craft::$app->getDb()->createCommand()
+            ->delete('{{%queue}}', ['like', 'description', '%order ' . $orderId . '%', false])
+            ->execute();
     }
 
     private function uniqueEmail(string $label): string

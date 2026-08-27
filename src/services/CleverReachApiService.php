@@ -216,6 +216,28 @@ class CleverReachApiService extends Component
     }
 
     /**
+     * Adds tags to a single receiver in a group (CR-10). CleverReach only
+     * fires THEA/automation triggers when a group id is supplied — hence the
+     * group-scoped endpoint. Call once per receiver; batch tagging does not
+     * trigger automations.
+     *
+     * @param list<string> $tags
+     * @return array<string, mixed>
+     */
+    public function addTags(int $groupId, string $email, array $tags): array
+    {
+        if ($tags === []) {
+            return [];
+        }
+
+        return $this->request(
+            'POST',
+            "groups/{$groupId}/receivers/" . rawurlencode($email) . '/tags',
+            ['tags' => $tags]
+        );
+    }
+
+    /**
      * Account-wide receiver attributes (not per-group — CleverReach's
      * `attributes` endpoint is global). Used the same way as
      * {@see getGroups()}, to build the Formie field-mapping UI.
