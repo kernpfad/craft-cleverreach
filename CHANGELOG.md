@@ -6,6 +6,11 @@
 - User attribute sync now runs via a debounced Craft queue job (`SyncUserJob`): `User::EVENT_AFTER_SAVE` enqueues by `userId` only (5s delay, ~30s cache gate) so the save request no longer waits on CleverReach HTTP, and later profile edits inside the window are included when the worker runs.
 - Unit helpers/tests for webhook secret validation (`WebhookSecretGuard`) and sync enqueue constants (`SyncEnqueueGate`).
 - `composer test:integration` now runs a real Craft-booted PHPUnit suite (`tests/integration/`) against `CRAFT_TEST_SITE_PATH`: `SyncUserJob` debounce/consent/soft-sync behaviour driven through real `User` saves and `queue/run`, plus the unsubscribe webhook's secret check and consent update driven through the real controller action. See `tests/integration/README.md`.
+- Integration coverage for `CommerceOrderPushService`: a completed Commerce order is pushed to CleverReach only for a consenting, non-unsubscribed, DOI-confirmed receiver (CR-06 — a still-pending receiver is never force-activated by an order), and a CleverReach failure during push never breaks order completion.
+- Integration coverage for `Settings::validateDoiFormId()` (requires a booted Craft app for `Craft::t()`/Yii validators, so it can't be a unit test).
+
+### Fixed
+- `Settings::validateDoiFormId()` was silently never running: Yii's inline validators default to `skipOnEmpty: true`, and the one case this rule exists to catch — `doiFormId` left empty — is exactly the "empty" value that got skipped. A default group could be saved without a DOI form despite the rule's intent. Found via the new `Settings` integration test.
 
 ### Changed
 - Unsubscribe webhook secret check goes through `WebhookSecretGuard` (same 404-on-disabled/mismatch behaviour).

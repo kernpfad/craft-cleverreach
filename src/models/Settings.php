@@ -77,7 +77,7 @@ class Settings extends Model
             [['attributeMapping'], 'safe'],
             [['enableOrderPush', 'enableCatalog'], 'boolean'],
             [['catalogImageFieldHandle', 'catalogImageTransformHandle', 'catalogDescriptionFieldHandle'], 'string'],
-            [['doiFormId'], 'validateDoiFormId'],
+            [['doiFormId'], 'validateDoiFormId', 'skipOnEmpty' => false],
         ];
     }
 

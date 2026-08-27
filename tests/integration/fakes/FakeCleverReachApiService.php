@@ -20,8 +20,11 @@ class FakeCleverReachApiService extends CleverReachApiService
     /** @var array<string, mixed>|null Returned by getReceiver(); null means "no such receiver". */
     public ?array $receiverToReturn = null;
 
-    /** @var list<array{method: string, groupId: int, email: string, attributes: array<string, mixed>}> */
+    /** @var list<array<string, mixed>> Each entry always has 'method', 'groupId', 'email'. */
     public array $calls = [];
+
+    /** @var bool Simulates a CleverReach outage during pushOrderToReceiver() (must not break order completion). */
+    public bool $throwOnPushOrder = false;
 
     public function getReceiver(int $groupId, string $email): ?array
     {
@@ -40,5 +43,16 @@ class FakeCleverReachApiService extends CleverReachApiService
         $this->calls[] = ['method' => 'updateReceiverAttributes', 'groupId' => $groupId, 'email' => $email, 'attributes' => $attributes];
 
         return ['email' => $email, 'activated' => false];
+    }
+
+    public function pushOrderToReceiver(int $groupId, string $email, array $orderPayload): array
+    {
+        if ($this->throwOnPushOrder) {
+            throw new \RuntimeException('Simulated CleverReach order push failure.');
+        }
+
+        $this->calls[] = ['method' => 'pushOrderToReceiver', 'groupId' => $groupId, 'email' => $email, 'orderPayload' => $orderPayload];
+
+        return ['email' => $email, 'activated' => true];
     }
 }
