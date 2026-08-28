@@ -41,6 +41,7 @@ use craft\commerce\models\ProductType;
 use craft\commerce\models\ProductTypeSite;
 use craft\commerce\Plugin as Commerce;
 use craft\commerce\records\Transaction as TransactionRecord;
+use craft\db\Query;
 use craft\elements\User;
 use craft\helpers\Db;
 use DateTime;
@@ -287,9 +288,11 @@ class CommerceOrderPushServiceTest extends TestCase
 
     private function pendingJobCountFor(int $orderId): int
     {
-        return (int) Craft::$app->getDb()->createCommand(
-            'SELECT COUNT(*) FROM {{%queue}} WHERE [[description]] LIKE :desc AND [[fail]] = 0'
-        )->bindValue(':desc', '%order ' . $orderId . '%')->queryScalar();
+        return (int) (new Query())
+            ->from('{{%queue}}')
+            ->where(['like', 'description', '%order ' . $orderId . '%', false])
+            ->andWhere(['fail' => false])
+            ->count();
     }
 
     /**
@@ -303,7 +306,7 @@ class CommerceOrderPushServiceTest extends TestCase
         Craft::$app->getDb()->createCommand()
             ->update('{{%queue}}', ['delay' => 0, 'timePushed' => 0], [
                 'and',
-                ['fail' => 0],
+                ['fail' => false],
                 ['like', 'description', '%order ' . $orderId . '%', false],
             ])
             ->execute();

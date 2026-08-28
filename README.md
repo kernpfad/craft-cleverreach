@@ -2,6 +2,8 @@
 
 GDPR-compliant CleverReach newsletter integration for Craft CMS: double opt-in signup, attribute sync, and an optional Craft Commerce order push.
 
+See [CHANGELOG.md](CHANGELOG.md) for release notes, [CONTRIBUTING.md](CONTRIBUTING.md) for local QA commands, and [SECURITY.md](SECURITY.md) for vulnerability reporting.
+
 ## Requirements
 
 - Craft CMS 5.0.0+
