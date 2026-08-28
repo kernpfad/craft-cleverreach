@@ -4,9 +4,9 @@
     "type": "craft-plugin",
     "license": "MIT",
     "support": {
-        "docs": "https://github.com/kernpfad/craft-cleverreach",
+        "docs": "https://kernpfad.dev/en/craft/plugins/craft-cleverreach/docs/",
         "issues": "https://github.com/kernpfad/craft-cleverreach/issues",
-        "email": "rene.neuburger@gmx.de",
+        "email": "support@kernpfad.dev",
         "source": "https://github.com/kernpfad/craft-cleverreach",
         "security": "https://github.com/kernpfad/craft-cleverreach/blob/main/SECURITY.md"
     },
@@ -42,7 +42,7 @@
         "handle": "cleverreach",
         "name": "CleverReach",
         "developer": "Kernpfad",
-        "documentationUrl": "https://github.com/kernpfad/craft-cleverreach",
+        "documentationUrl": "https://kernpfad.dev/en/craft/plugins/craft-cleverreach/docs/",
         "class": "kernpfad\\cleverreach\\Plugin",
         "changelogUrl": "https://raw.githubusercontent.com/kernpfad/craft-cleverreach/main/CHANGELOG.md",
         "developerUrl": "https://kernpfad.dev",
