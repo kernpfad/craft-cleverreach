@@ -2,7 +2,7 @@
     "name": "kernpfad/craft-cleverreach",
     "description": "GDPR-compliant CleverReach newsletter integration for Craft CMS: double opt-in signup, attribute sync, and an optional Craft Commerce order push.",
     "type": "craft-plugin",
-    "license": "MIT",
+    "license": "proprietary",
     "support": {
         "docs": "https://github.com/kernpfad/craft-cleverreach",
         "issues": "https://github.com/kernpfad/craft-cleverreach/issues",

@@ -191,6 +191,6 @@ The endpoint is read-only and deliberately runs **without Craft's CSRF protectio
 
 ## License
 
-Licensed under the [MIT License](LICENSE.md).
+Licensed under the [Craft License Agreement](LICENSE.md).
 
 [Legal notice](https://kernpfad.dev/en/legal-notice) · [Privacy policy](https://kernpfad.dev/en/privacy-policy) · [Terms and conditions](https://kernpfad.dev/en/terms-and-conditions)
