@@ -26,6 +26,7 @@ namespace kernpfad\cleverreach\tests\integration;
  */
 
 use Craft;
+use craft\db\Query;
 use craft\elements\User;
 use kernpfad\cleverreach\Plugin;
 use kernpfad\cleverreach\records\ConsentLogRecord;
@@ -300,9 +301,11 @@ class UserSyncQueueTest extends TestCase
 
     private function pendingJobCountFor(int $userId): int
     {
-        return (int) Craft::$app->getDb()->createCommand(
-            'SELECT COUNT(*) FROM {{%queue}} WHERE [[description]] LIKE :desc AND [[fail]] = 0'
-        )->bindValue(':desc', '%user ' . $userId . '%')->queryScalar();
+        return (int) (new Query())
+            ->from('{{%queue}}')
+            ->where(['like', 'description', '%user ' . $userId . '%', false])
+            ->andWhere(['fail' => false])
+            ->count();
     }
 
     /**
@@ -316,7 +319,7 @@ class UserSyncQueueTest extends TestCase
             ->update('{{%queue}}', ['delay' => 0, 'timePushed' => 0], [
                 'and',
                 ['like', 'description', '%user ' . $userId . '%', false],
-                ['fail' => 0],
+                ['fail' => false],
             ])
             ->execute();
 
