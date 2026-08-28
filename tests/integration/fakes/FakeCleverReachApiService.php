@@ -1,0 +1,88 @@
+<?php
+
+declare(strict_types=1);
+
+namespace kernpfad\cleverreach\tests\integration\fakes;
+
+use kernpfad\cleverreach\services\CleverReachApiService;
+
+/**
+ * Drop-in replacement for {@see CleverReachApiService}, swapped onto the
+ * plugin via `Plugin::getInstance()->set('cleverReachApi', ...)` so
+ * integration tests never make a real network call. Records every
+ * upsert-style call so tests can assert on what UserSyncService actually
+ * sent, and lets a test control the receiver state
+ * {@see \kernpfad\cleverreach\services\UserSyncService} sees back (CR-06
+ * soft-sync decision).
+ */
+class FakeCleverReachApiService extends CleverReachApiService
+{
+    /** @var array<string, mixed>|null Returned by getReceiver(); null means "no such receiver". */
+    public ?array $receiverToReturn = null;
+
+    /** @var list<array<string, mixed>> Each entry always has 'method', 'groupId', 'email'. */
+    public array $calls = [];
+
+    /** @var bool Simulates a CleverReach outage during pushOrderToReceiver() (must not break order completion). */
+    public bool $throwOnPushOrder = false;
+
+    public function getReceiver(int $groupId, string $email): ?array
+    {
+        return $this->receiverToReturn;
+    }
+
+    /**
+     * @param array<string, mixed> $attributes
+     * @return array<string, mixed>
+     */
+    public function createReceiverForDoubleOptIn(int $groupId, string $email, array $attributes = []): array
+    {
+        $this->calls[] = ['method' => 'createReceiverForDoubleOptIn', 'groupId' => $groupId, 'email' => $email, 'attributes' => $attributes];
+
+        return ['email' => $email, 'activated' => false];
+    }
+
+    /** @return array<string, mixed> */
+    public function sendDoubleOptInMail(int $doiFormId, string $email): array
+    {
+        $this->calls[] = ['method' => 'sendDoubleOptInMail', 'doiFormId' => $doiFormId, 'email' => $email];
+
+        return [];
+    }
+
+    public function activateReceiver(int $groupId, string $email, array $attributes = []): array
+    {
+        $this->calls[] = ['method' => 'activateReceiver', 'groupId' => $groupId, 'email' => $email, 'attributes' => $attributes];
+
+        return ['email' => $email, 'activated' => true];
+    }
+
+    public function updateReceiverAttributes(int $groupId, string $email, array $attributes = []): array
+    {
+        $this->calls[] = ['method' => 'updateReceiverAttributes', 'groupId' => $groupId, 'email' => $email, 'attributes' => $attributes];
+
+        return ['email' => $email, 'activated' => false];
+    }
+
+    public function pushOrderToReceiver(int $groupId, string $email, array $orderPayload): array
+    {
+        if ($this->throwOnPushOrder) {
+            throw new \RuntimeException('Simulated CleverReach order push failure.');
+        }
+
+        $this->calls[] = ['method' => 'pushOrderToReceiver', 'groupId' => $groupId, 'email' => $email, 'orderPayload' => $orderPayload];
+
+        return ['email' => $email, 'activated' => true];
+    }
+
+    /**
+     * @param list<string> $tags
+     * @return list<string>
+     */
+    public function addTags(int $groupId, string $email, array $tags = []): array
+    {
+        $this->calls[] = ['method' => 'addTags', 'groupId' => $groupId, 'email' => $email, 'tags' => $tags];
+
+        return $tags;
+    }
+}

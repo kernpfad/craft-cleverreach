@@ -1,0 +1,113 @@
+<?php
+
+declare(strict_types=1);
+
+namespace kernpfad\cleverreach\services;
+
+use Craft;
+use craft\base\Component;
+use craft\commerce\elements\Order;
+use kernpfad\cleverreach\Plugin;
+use kernpfad\cleverreach\util\OrderTagDecision;
+use kernpfad\cleverreach\util\ReceiverSyncDecision;
+use Throwable;
+
+/**
+ * Pushes a completed Craft Commerce order to CleverReach so
+ * CleverReach's own automation flows (welcome mail after first order,
+ * reactivation, post-purchase) can react to it.
+ *
+ * Invoked from {@see \kernpfad\cleverreach\jobs\PushOrderJob} so the
+ * order-complete request never waits on CleverReach HTTP. On a successful
+ * push, configured order-complete tags are applied in the same run (CR-10).
+ *
+ * This class is only ever loaded/called when Craft Commerce is installed
+ * and `enableOrderPush` is on — see Plugin::attachCommerceEventHandlers().
+ */
+class CommerceOrderPushService extends Component
+{
+    public function pushOrder(Order $order): void
+    {
+        $email = $order->getEmail();
+
+        if ($email === null || $email === '') {
+            return;
+        }
+
+        $consentRecord = Plugin::getInstance()->consent->getLatestConsent(null, $email);
+
+        // Never create a receiver purely because of an order — only push order
+        // data for people who already opted in.
+        if ($consentRecord === null) {
+            return;
+        }
+
+        // CR-07: an unsubscribe/bounce notification means this address
+        // shouldn't be touched anymore, order data included.
+        if ($consentRecord->unsubscribedAt !== null) {
+            return;
+        }
+
+        $groupId = $consentRecord->groupId ?? Plugin::getInstance()->getSettings()->defaultGroupId;
+
+        if ($groupId === null) {
+            return;
+        }
+
+        $pushSucceeded = false;
+
+        try {
+            $api = Plugin::getInstance()->cleverReachApi;
+            $receiver = $api->getReceiver((int) $groupId, $email);
+
+            // CR-06: do not push orders (which send activated:true) while DOI
+            // is still pending — that would force-activate the receiver.
+            if ($receiver === null || !ReceiverSyncDecision::isActivated($receiver['activated'] ?? null)) {
+                return;
+            }
+
+            $api->pushOrderToReceiver(
+                (int) $groupId,
+                $email,
+                $this->buildOrderPayload($order)
+            );
+            $pushSucceeded = true;
+        } catch (Throwable $e) {
+            Craft::error('CleverReach order push failed: ' . $e->getMessage(), __METHOD__);
+        }
+
+        if (!OrderTagDecision::shouldApplyTags($pushSucceeded)) {
+            return;
+        }
+
+        Plugin::getInstance()->tags->applyFromSettings(
+            TagService::CONTEXT_ORDER_COMPLETE,
+            $email,
+            (int) $groupId
+        );
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildOrderPayload(Order $order): array
+    {
+        $items = [];
+
+        foreach ($order->getLineItems() as $lineItem) {
+            $items[] = [
+                'name' => $lineItem->getDescription(),
+                'quantity' => $lineItem->qty,
+                'price' => $lineItem->salePrice,
+            ];
+        }
+
+        return [
+            'order_id' => $order->number,
+            'date' => $order->dateOrdered?->format('Y-m-d\TH:i:sP'),
+            'total' => (float) $order->totalPrice,
+            'currency' => $order->currency,
+            'items' => $items,
+        ];
+    }
+}

@@ -1,0 +1,371 @@
+{% import "_includes/forms" as forms %}
+
+{% if lastError %}
+    <div class="pane error" style="margin-bottom: 1rem;">
+        <p>
+            <strong>{{ "Last API error"|t('cleverreach') }}</strong>
+            ({{ lastError.at|date('Y-m-d H:i') }}): {{ lastError.message }}
+        </p>
+    </div>
+{% endif %}
+
+<h2>{{ "OAuth-Zugangsdaten"|t('cleverreach') }}</h2>
+<p class="light">{{ "Unter CleverReach: Account → Extras → REST API eine OAuth-App anlegen (Client Credentials Grant genügt). Client-ID/-Secret als Umgebungsvariablen hinterlegen, hier nur den Variablennamen eintragen."|t('cleverreach') }}</p>
+
+{{ forms.textField({
+    label: "OAuth Client-ID"|t('cleverreach'),
+    instructions: "Name der Umgebungsvariable, z. B. $CLEVERREACH_CLIENT_ID"|t('cleverreach'),
+    id: 'oauthClientId',
+    name: 'oauthClientId',
+    value: settings.oauthClientId,
+    errors: settings.getErrors('oauthClientId'),
+}) }}
+
+{{ forms.textField({
+    label: "OAuth Client-Secret"|t('cleverreach'),
+    instructions: "Name der Umgebungsvariable, z. B. $CLEVERREACH_CLIENT_SECRET"|t('cleverreach'),
+    id: 'oauthClientSecret',
+    name: 'oauthClientSecret',
+    value: settings.oauthClientSecret,
+    errors: settings.getErrors('oauthClientSecret'),
+}) }}
+
+<div id="cleverreach-test" class="field">
+    <button type="button" class="btn" id="cleverreach-test-run">{{ "Test connection"|t('cleverreach') }}</button>
+    <span id="cleverreach-test-result" class="hidden" style="margin-left: 1rem;"></span>
+</div>
+
+{% js %}
+(function () {
+    // This template is always rendered through craft\base\Plugin::settingsHtml(),
+    // which Craft core wraps in view.namespaceInputs(..., 'settings') --
+    // every id/name/for in the HTML above becomes "settings-<original>".
+    // getElementById() with the literal, unnamespaced string below would
+    // silently find nothing and this handler would never attach; run the
+    // same ids output above through |namespaceInputId so the JS always
+    // matches whatever the HTML actually got rewritten to.
+    const btn = document.getElementById({{ 'cleverreach-test-run'|namespaceInputId|json_encode|raw }});
+    const result = document.getElementById({{ 'cleverreach-test-result'|namespaceInputId|json_encode|raw }});
+    if (!btn || !result) return;
+
+    btn.addEventListener('click', async () => {
+        btn.setAttribute('disabled', 'disabled');
+        result.classList.add('hidden');
+
+        const body = new FormData();
+        body.append(Craft.csrfTokenName, Craft.csrfTokenValue);
+
+        try {
+            const response = await fetch('{{ actionUrl('cleverreach/cp/test/run') }}', {
+                method: 'POST',
+                headers: { 'Accept': 'application/json' },
+                body,
+            });
+            const data = await response.json();
+            result.textContent = data.message;
+            result.className = data.success ? 'success' : 'error';
+        } catch (error) {
+            result.textContent = String(error);
+            result.className = 'error';
+        } finally {
+            btn.removeAttribute('disabled');
+        }
+    });
+})();
+{% endjs %}
+
+<hr>
+
+<h2>{{ "Listen & Formulare"|t('cleverreach') }}</h2>
+
+{# CR-04: pickers fetched live from the connected account, with a manual
+   ID text fallback when the API is unreachable. #}
+<div class="field" id="cleverreach-groups-field">
+    <div class="heading">
+        <label for="{{ 'defaultGroupId'|namespaceInputId }}">{{ "Standard-Zielgruppe"|t('cleverreach') }}</label>
+    </div>
+    <div class="input ltr">
+        <div class="flex">
+            <select id="{{ 'defaultGroupId'|namespaceInputId }}" name="defaultGroupId" class="flex-grow">
+                {% if settings.defaultGroupId %}
+                    <option value="{{ settings.defaultGroupId }}" selected>{{ settings.defaultGroupId }}</option>
+                {% else %}
+                    <option value="">{{ "Keine ausgewählt"|t('cleverreach') }}</option>
+                {% endif %}
+            </select>
+            <input type="text" id="{{ 'defaultGroupId-fallback'|namespaceInputId }}" class="text hidden flex-grow" value="{{ settings.defaultGroupId }}" size="8" inputmode="numeric">
+            <button type="button" class="btn" id="{{ 'cleverreach-groups-refresh'|namespaceInputId }}">{{ "Gruppen laden"|t('cleverreach') }}</button>
+        </div>
+    </div>
+    <div class="instructions">
+        <p>{{ "Gruppen werden mit dem konfigurierten Zugang live aus deinem CleverReach-Account geladen. Bei Verbindungsfehler kannst du die ID manuell eintragen."|t('cleverreach') }}</p>
+    </div>
+    <span id="{{ 'cleverreach-groups-result'|namespaceInputId }}" class="hidden"></span>
+    {% if settings.getErrors('defaultGroupId') %}
+        <ul class="errors">
+            {% for error in settings.getErrors('defaultGroupId') %}
+                <li>{{ error }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+</div>
+
+<div class="field" id="cleverreach-forms-field">
+    <div class="heading">
+        <label for="{{ 'doiFormId'|namespaceInputId }}">{{ "Double-Opt-in Formular"|t('cleverreach') }}</label>
+    </div>
+    <div class="input ltr">
+        <div class="flex">
+            <select id="{{ 'doiFormId'|namespaceInputId }}" name="doiFormId" class="flex-grow">
+                {% if settings.doiFormId %}
+                    <option value="{{ settings.doiFormId }}" selected>{{ settings.doiFormId }}</option>
+                {% else %}
+                    <option value="">{{ "Keine ausgewählt"|t('cleverreach') }}</option>
+                {% endif %}
+            </select>
+            <input type="text" id="{{ 'doiFormId-fallback'|namespaceInputId }}" class="text hidden flex-grow" value="{{ settings.doiFormId }}" size="8" inputmode="numeric">
+            <button type="button" class="btn" id="{{ 'cleverreach-forms-refresh'|namespaceInputId }}">{{ "Formulare laden"|t('cleverreach') }}</button>
+        </div>
+    </div>
+    <div class="instructions">
+        <p>{{ "Formulare werden mit dem konfigurierten Zugang live aus deinem CleverReach-Account geladen. Bei Verbindungsfehler kannst du die ID manuell eintragen."|t('cleverreach') }}</p>
+    </div>
+    <span id="{{ 'cleverreach-forms-result'|namespaceInputId }}" class="hidden"></span>
+    {% if settings.getErrors('doiFormId') %}
+        <ul class="errors">
+            {% for error in settings.getErrors('doiFormId') %}
+                <li>{{ error }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+</div>
+
+{% js %}
+(function () {
+    function wirePicker(config) {
+        const select = document.getElementById(config.selectId);
+        const fallback = document.getElementById(config.fallbackId);
+        const refreshBtn = document.getElementById(config.refreshId);
+        const result = document.getElementById(config.resultId);
+        if (!select || !fallback || !refreshBtn || !result) return;
+
+        const selectedId = config.selectedId == null ? '' : String(config.selectedId);
+
+        function showFallback(message) {
+            const current = select.value || selectedId;
+            select.removeAttribute('name');
+            select.classList.add('hidden');
+            fallback.name = config.fieldName;
+            fallback.value = current;
+            fallback.classList.remove('hidden');
+            result.textContent = message;
+            result.className = 'error';
+        }
+
+        function showSelect() {
+            fallback.removeAttribute('name');
+            fallback.classList.add('hidden');
+            select.name = config.fieldName;
+            select.classList.remove('hidden');
+        }
+
+        async function load() {
+            refreshBtn.setAttribute('disabled', 'disabled');
+            result.classList.add('hidden');
+
+            const body = new FormData();
+            body.append(Craft.csrfTokenName, Craft.csrfTokenValue);
+
+            try {
+                const response = await fetch(config.actionUrl, {
+                    method: 'POST',
+                    headers: { 'Accept': 'application/json' },
+                    body,
+                });
+                const data = await response.json();
+
+                if (!data.success) {
+                    showFallback(data.message || config.failMessage);
+                    return;
+                }
+
+                showSelect();
+                const current = select.value || fallback.value || selectedId;
+                select.innerHTML = '';
+
+                const placeholder = document.createElement('option');
+                placeholder.value = '';
+                placeholder.textContent = {{ "Keine ausgewählt"|t('cleverreach')|json_encode|raw }};
+                select.appendChild(placeholder);
+
+                for (const item of data[config.itemsKey] || []) {
+                    const option = document.createElement('option');
+                    option.value = item.id;
+                    option.textContent = `${item.name} (#${item.id})`;
+                    if (String(item.id) === String(selectedId) || String(item.id) === String(current)) {
+                        option.selected = true;
+                    }
+                    select.appendChild(option);
+                }
+
+                result.textContent = config.successMessage;
+                result.className = 'success';
+            } catch (error) {
+                showFallback(String(error));
+            } finally {
+                refreshBtn.removeAttribute('disabled');
+            }
+        }
+
+        refreshBtn.addEventListener('click', load);
+    }
+
+    wirePicker({
+        selectId: {{ 'defaultGroupId'|namespaceInputId|json_encode|raw }},
+        fallbackId: {{ 'defaultGroupId-fallback'|namespaceInputId|json_encode|raw }},
+        refreshId: {{ 'cleverreach-groups-refresh'|namespaceInputId|json_encode|raw }},
+        resultId: {{ 'cleverreach-groups-result'|namespaceInputId|json_encode|raw }},
+        fieldName: 'defaultGroupId',
+        selectedId: {{ settings.defaultGroupId|json_encode|raw }},
+        actionUrl: {{ actionUrl('cleverreach/cp/groups/index')|json_encode|raw }},
+        itemsKey: 'groups',
+        failMessage: {{ "Gruppen konnten nicht geladen werden."|t('cleverreach')|json_encode|raw }},
+        successMessage: {{ "Gruppen geladen."|t('cleverreach')|json_encode|raw }},
+    });
+
+    wirePicker({
+        selectId: {{ 'doiFormId'|namespaceInputId|json_encode|raw }},
+        fallbackId: {{ 'doiFormId-fallback'|namespaceInputId|json_encode|raw }},
+        refreshId: {{ 'cleverreach-forms-refresh'|namespaceInputId|json_encode|raw }},
+        resultId: {{ 'cleverreach-forms-result'|namespaceInputId|json_encode|raw }},
+        fieldName: 'doiFormId',
+        selectedId: {{ settings.doiFormId|json_encode|raw }},
+        actionUrl: {{ actionUrl('cleverreach/cp/forms/index')|json_encode|raw }},
+        itemsKey: 'forms',
+        failMessage: {{ "Formulare konnten nicht geladen werden."|t('cleverreach')|json_encode|raw }},
+        successMessage: {{ "Formulare geladen."|t('cleverreach')|json_encode|raw }},
+    });
+})();
+{% endjs %}
+
+<hr>
+
+<h2>{{ "Unsubscribe-Webhook"|t('cleverreach') }}</h2>
+<p class="light">{{ "Empfängt Abmelde-/Bounce-Benachrichtigungen von außerhalb (z. B. einer CleverReach-Automation oder einem eigenen Skript) unter actions/cleverreach/webhook/unsubscribe. Leer lassen deaktiviert den Endpunkt vollständig (404) — ein ungeschützter Endpunkt, der echte Abonnenten als abgemeldet markieren kann, ist ein schlechterer Default als ein deaktivierter."|t('cleverreach') }}</p>
+
+{{ forms.textField({
+    label: "Webhook-Secret"|t('cleverreach'),
+    instructions: "Name der Umgebungsvariable, z. B. $CLEVERREACH_WEBHOOK_SECRET. Wird als ?secret=... an die URL angehängt erwartet."|t('cleverreach'),
+    id: 'webhookSecret',
+    name: 'webhookSecret',
+    value: settings.webhookSecret,
+    errors: settings.getErrors('webhookSecret'),
+}) }}
+
+<hr>
+
+<h2>{{ "Attribut-Mapping"|t('cleverreach') }}</h2>
+
+{{ forms.editableTableField({
+    label: "Craft-Feld → CleverReach-Attribut"|t('cleverreach'),
+    instructions: "Ordnet Werte aus dem Anmeldeformular (fields[...]) CleverReach-Empfänger-Attributen zu."|t('cleverreach'),
+    id: 'attributeMapping',
+    name: 'attributeMapping',
+    cols: {
+        craftField: { heading: "Craft-Feld-Handle"|t('cleverreach'), type: 'singleline' },
+        cleverReachAttribute: { heading: "CleverReach-Attribut"|t('cleverreach'), type: 'singleline' },
+    },
+    rows: settings.attributeMapping,
+    addRowLabel: "Zeile hinzufügen"|t('cleverreach'),
+}) }}
+
+<hr>
+
+<h2>{{ "Tags / Automationen"|t('cleverreach') }}</h2>
+<p class="light">{{ "Kommaseparierte CleverReach-Tag-Namen. Müssen mit den Tags in CleverReach-Automationen übereinstimmen. Leer = aus. Tags werden pro Empfänger gesetzt (Batch triggert keine Automationen)."|t('cleverreach') }}</p>
+
+{{ forms.textField({
+    label: "Tags nach Bestellung"|t('cleverreach'),
+    instructions: "Nach erfolgreichem Order-Push (z. B. purchased, customer)."|t('cleverreach'),
+    id: 'orderCompleteTags',
+    name: 'orderCompleteTags',
+    value: settings.orderCompleteTags,
+    errors: settings.getErrors('orderCompleteTags'),
+}) }}
+
+{{ forms.textField({
+    label: "Tags nach Anmeldung"|t('cleverreach'),
+    instructions: "Nach erfolgreichem Consent-Log beim Subscribe."|t('cleverreach'),
+    id: 'subscribeTags',
+    name: 'subscribeTags',
+    value: settings.subscribeTags,
+    errors: settings.getErrors('subscribeTags'),
+}) }}
+
+{{ forms.textField({
+    label: "Tags nach User-Sync"|t('cleverreach'),
+    instructions: "Nach erfolgreichem Attribut-Sync am Craft-User."|t('cleverreach'),
+    id: 'userSyncTags',
+    name: 'userSyncTags',
+    value: settings.userSyncTags,
+    errors: settings.getErrors('userSyncTags'),
+}) }}
+
+<hr>
+
+<h2>{{ "Craft Commerce"|t('cleverreach') }}</h2>
+
+{{ forms.lightswitchField({
+    label: "Bestellungen an CleverReach senden"|t('cleverreach'),
+    instructions: "Sendet abgeschlossene Bestellungen bereits angemeldeter (Double-Opt-in-bestätigter) Empfänger als Order-Daten an CleverReach (debounced Queue-Job). Danach optional die Tags nach Bestellung. Nur wirksam, wenn Craft Commerce installiert ist. Legt niemals einen neuen Empfänger allein aufgrund einer Bestellung an."|t('cleverreach'),
+    id: 'enableOrderPush',
+    name: 'enableOrderPush',
+    on: settings.enableOrderPush,
+}) }}
+
+<hr>
+
+<h2>{{ "Produktkatalog (\"My Content\")"|t('cleverreach') }}</h2>
+<p class="light">{{ "Stellt Craft-Commerce-Produkte über CleverReachs „My Content“-Schnittstelle bereit, damit sie im Newsletter-Editor durchsuchbar und einfügbar sind. Nur wirksam, wenn Craft Commerce installiert ist."|t('cleverreach') }}</p>
+
+{{ forms.lightswitchField({
+    label: "Produktkatalog aktivieren"|t('cleverreach'),
+    id: 'enableCatalog',
+    name: 'enableCatalog',
+    on: settings.enableCatalog,
+}) }}
+
+{{ forms.textField({
+    label: "Passwort für die Produktsuch-URL"|t('cleverreach'),
+    instructions: "Name der Umgebungsvariable, z. B. $CLEVERREACH_CATALOG_PASSWORD. Leer lassen, um auf einen Passwortschutz zu verzichten. Dasselbe Passwort wird bei CleverReach als Teil der Produktsuch-URL hinterlegt (?password=...)."|t('cleverreach'),
+    id: 'catalogPassword',
+    name: 'catalogPassword',
+    value: settings.catalogPassword,
+    errors: settings.getErrors('catalogPassword'),
+}) }}
+
+{{ forms.textField({
+    label: "Bild-Feld (Assets-Feld-Handle am Produkt)"|t('cleverreach'),
+    id: 'catalogImageFieldHandle',
+    name: 'catalogImageFieldHandle',
+    value: settings.catalogImageFieldHandle,
+    errors: settings.getErrors('catalogImageFieldHandle'),
+}) }}
+
+{{ forms.textField({
+    label: "Bild-Transform-Handle (optional)"|t('cleverreach'),
+    instructions: "Name eines konfigurierten Craft-Bild-Transforms für Newsletter-taugliche Bildgrößen. Leer lassen für die Originalgröße."|t('cleverreach'),
+    id: 'catalogImageTransformHandle',
+    name: 'catalogImageTransformHandle',
+    value: settings.catalogImageTransformHandle,
+    errors: settings.getErrors('catalogImageTransformHandle'),
+}) }}
+
+{{ forms.textField({
+    label: "Beschreibungs-Feld (Feld-Handle am Produkt)"|t('cleverreach'),
+    instructions: "Optional. Leer lassen, wenn keine Beschreibung mitgegeben werden soll."|t('cleverreach'),
+    id: 'catalogDescriptionFieldHandle',
+    name: 'catalogDescriptionFieldHandle',
+    value: settings.catalogDescriptionFieldHandle,
+    errors: settings.getErrors('catalogDescriptionFieldHandle'),
+}) }}
